@@ -1,137 +1,139 @@
-Endpoint Behavioral Twin (EBT)
+# Endpoint Behavioral Twin (EBT)
 
-A local, behavior-based endpoint analysis system for safely executing and evaluating untrusted programs inside an isolated environment.
+**Endpoint Behavioral Twin (EBT)** is a local, behavior-based endpoint analysis system.
 
-EBT focuses on how a program behaves, not what it looks like.
-It correlates file, process, network, persistence, and configuration activity into a single, explainable risk assessment.
+It safely executes untrusted programs inside an isolated environment and evaluates them **based on behavior, not appearance**.
 
-Why EBT?
+---
 
-Most malware sandboxes either:
+## Why EBT?
 
-detonate real malware in the cloud, or
+Most malware analysis systems either:
 
-rely on opaque machine-learning decisions
+- Detonate real malware in cloud environments
+- Rely on opaque machine-learning decisions
 
-EBT takes a different approach:
+EBT takes a different approach.
 
-Runs entirely on a local machine
+**Design principles:**
+- Fully local execution
+- Controlled and ethical simulations
+- Transparent, explainable results
+- Built for learning, demos, and academic evaluation
 
-Uses controlled, ethical simulations
+---
 
-Produces transparent, explainable results
+## High-Level Concept
 
-Designed for learning, demos, and academic evaluation
+EBT treats a virtual machine as a **behavioral twin** of an endpoint.
 
-High-Level Concept
+During execution:
 
-EBT treats a virtual machine as a behavioral twin of an endpoint.
+- A file runs inside a restricted sandbox
+- Multiple monitors observe behavior
+- All activity is scoped to the execution window
+- Observations are aggregated per file
 
-A submitted file is executed inside a restricted sandbox while multiple monitors observe its actions.
-All observations are scoped to the execution window and aggregated into a file-centric behavioral profile.
+The result is a **single behavioral profile and verdict**.
 
-One file in → one verdict out.
+---
 
-What EBT Monitors
-File Activity
+## Behavioral Monitors
 
-File creation, modification, renaming, deletion
+### File Activity
+- File creation, modification, renaming, deletion
+- High-rate or patterned operations (e.g. ransomware-like behavior)
 
-High-rate or patterned operations (ransomware-like behavior)
+### Process Activity
+- Process creation
+- Parent → child relationships
+- Burst spawning and deep process trees
 
-Process Activity
+### Network Activity
+- Outbound connections only
+- Repeated connections to the same destination
+- Uncommon or suspicious ports  
+  *(no packet capture)*
 
-Process creation
+### Persistence Mechanisms
+- User-level crontab modifications
+- Autostart entry creation
 
-Parent → child relationships
+### Configuration Changes
+- Changes inside a lab-owned configuration directory
+- No system configuration is modified
 
-Burst spawning and deep process trees
+---
 
-Network Activity
+## Detection Philosophy
 
-Outbound connections
+EBT uses **rule-based, explainable heuristics**.
 
-Repeated connections to the same destination
-
-Uncommon or suspicious ports
-(Connection-level only, no packet capture)
-
-Persistence Mechanisms
-
-User-level crontab changes
-
-Autostart entry creation
-
-Configuration Changes
-
-Changes inside a lab-owned configuration directory
-
-No system configuration is modified
-
-Detection Philosophy
-
-EBT uses rule-based, explainable heuristics, not signatures or ML models.
+There are **no signatures** and **no ML models**.
 
 Examples:
+- Rapid file renaming increases risk
+- Large numbers of child processes increase risk
+- Repeated outbound connections increase risk
+- Persistence creation is a high-confidence signal
+- Configuration changes add supporting context
 
-Rapid file renaming increases risk
+Each rule contributes:
+- A risk score
+- A human-readable reason
 
-Large numbers of child processes increase risk
+---
 
-Repeated outbound connections increase risk
+## Risk Levels
 
-Persistence creation is a high-confidence signal
+EBT produces one of three verdicts:
 
-Configuration changes provide supporting context
+- **Benign** — Expected or low-impact behavior
+- **Suspicious** — Automated or unusual activity
+- **High Risk** — Strongly malicious behavioral patterns
 
-Each rule contributes both score and reason, making decisions easy to explain and defend.
+Verdicts are **threshold-based**, not arbitrary.
 
-Risk Levels
+---
 
-Benign – expected or low-impact behavior
-
-Suspicious – automated or unusual behavior
-
-High Risk – strongly malicious behavioral patterns
-
-Scores are aggregated but verdicts are threshold-based, not arbitrary.
-
-Intended Use
+## Intended Use
 
 EBT is suitable for:
 
-Academic projects
+- Academic projects
+- Security coursework
+- Behavioral analysis demonstrations
+- Learning endpoint detection concepts
 
-Security coursework
+> EBT is not intended to replace enterprise EDR platforms.
 
-Behavioral analysis demonstrations
+---
 
-Understanding endpoint detection concepts
+## Limitations
 
-It is not intended to replace enterprise EDR platforms.
+- No kernel-level telemetry
+- No packet-level network inspection
+- Manual VM snapshot restoration
+- Change-based persistence detection
 
-Limitations and Future Work
+---
 
-Current limitations:
+## Future Work
 
-No kernel telemetry
+- Automated snapshot restore
+- Timeline visualization
+- MITRE ATT&CK mapping
+- Additional behavioral sensors
 
-No packet-level network inspection
+---
 
-Snapshot revert is manual
+## Summary
 
-Persistence detection is change-based
+Endpoint Behavioral Twin demonstrates that meaningful endpoint detection can be achieved through:
 
-Possible future extensions:
+- Careful behavior observation
+- Safe execution
+- Clear, explainable reasoning
 
-Automated VM snapshot restore
+Without relying on opaque models or unsafe techniques.
 
-Timeline visualization
-
-MITRE ATT&CK mapping
-
-Additional behavioral sensors
-
-Summary
-
-Endpoint Behavioral Twin demonstrates that meaningful endpoint detection can be achieved through careful behavior observation, safe execution, and clear reasoning, without relying on opaque models or unsafe techniques.
