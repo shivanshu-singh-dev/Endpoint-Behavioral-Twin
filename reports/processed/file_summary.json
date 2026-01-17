@@ -13,14 +13,22 @@
   },
   "mega_attack.py": {
     "created": 20,
-    "modified": 41,
+    "modified": 40,
     "deleted": 10,
     "renamed": 20,
-    "total_events": 91,
-    "duration_seconds": 0.004307,
+    "total_events": 90,
+    "duration_seconds": 0.00751,
     "process": {
-      "child_count": 9,
+      "child_count": 12,
       "max_depth": 8
+    },
+    "network": {
+      "total_connections": 1,
+      "unique_ips": 1,
+      "max_conn_to_single_ip": 1,
+      "ports_used": [
+        80
+      ]
     }
   }
 }
