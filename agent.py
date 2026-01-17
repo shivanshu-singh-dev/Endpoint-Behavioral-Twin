@@ -33,6 +33,13 @@ def start_monitors():
     )
     monitors.append(proc_mon)
 
+    net_mon = subprocess.Popen(
+        [PYTHON_BIN, "monitors/network_monitor.py"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    monitors.append(net_mon)
+
     time.sleep(0.5) #allow starup
 
     for m in monitors:
@@ -100,6 +107,16 @@ def process_results(filename):
         )
     except subprocess.CalledProcessError:
         print("[agent] Process processor failed — continuing")
+    
+    #Network processor
+    try:
+        subprocess.run(
+            [PYTHON_BIN, "collectors/network_event_processor.py", filename],
+            check=True
+        )
+    except subprocess.CalledProcessError:
+        print("[agent] Network processor failed — continuing")
+
 
     # Analyzer
     subprocess.run(

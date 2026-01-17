@@ -19,7 +19,14 @@ def analyze(summary):
 
     ops_per_sec = total / duration
 
-    #Adding Process Scoring here
+    #Network addon
+    network = summary.get("network", {})
+    total = network.get("total_connections", 0)
+    max_ip = network.get("max_conn_to_single_ip", 0)
+    ports = network.get("ports_used", [])
+    #Network addon end
+
+    #Adding Process here
     process = summary.get("process", {})
     child_count = process.get("child_count", 0)
     max_depth = process.get("max_depth", 0)
@@ -49,7 +56,37 @@ def analyze(summary):
         score -= 15
         reasons.append("Process burst without destructive file behavior")
 
-    #Process Part ends
+    #Process ends
+
+    #Adding Network
+    if total >= 1:
+        score += 5
+        reasons.append("Outbound network activity observed")
+
+    # Repeated beaconing
+    if max_ip >= 5:
+        score += 20
+        reasons.append("Repeated connections to same IP")
+
+    if total >= 3 and duration <= 3:
+        score += 25
+        reasons.append("Rapid outbound connections")
+
+    # Uncommon ports
+    if any(p >= 1024 for p in ports):
+        score += 15
+        reasons.append("Uncommon destination port used")
+
+    # High volume
+    if total >= 10:
+        score += 30
+        reasons.append("High volume outbound connections")
+
+    # Dampening: network-only
+    if total >= 5 and summary["renamed"] == 0 and summary["deleted"] == 0:
+        score -= 15
+        reasons.append("Network activity without destructive file behavior")
+    #Network Ends
 
     if renamed >= 5:
         score += 45

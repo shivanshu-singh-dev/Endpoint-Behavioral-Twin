@@ -13,19 +13,20 @@
   },
   "mega_attack.py": {
     "verdict": "High Risk",
-    "risk_score": 265,
+    "risk_score": 270,
     "confidence": "High",
     "reasons": [
-      "Process spawned",
-      "9 child processes spawned",
+      "Process execution observed",
+      "Process burst (12 children)",
       "Rapid process spawning",
-      "Deep process tree detected",
+      "Very deep process tree",
+      "Outbound network activity observed",
       "20 files renamed",
-      "Rapid renaming (20 files in 0.00s)",
+      "Rapid renaming (20 files in 0.01s)",
       "10 files deleted",
-      "Rapid deletion (10 files in 0.00s)",
+      "Rapid deletion (10 files in 0.01s)",
       "High volume file writes",
-      "Extreme automation rate (21128.4 ops/sec)"
+      "Extreme automation rate (11984.0 ops/sec)"
     ]
   }
 }
