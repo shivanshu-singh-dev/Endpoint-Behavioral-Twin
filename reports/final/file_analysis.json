@@ -1,0 +1,31 @@
+{
+  "attack_sim.py": {
+    "verdict": "High Risk",
+    "risk_score": 100,
+    "confidence": "High",
+    "reasons": [
+      "Process spawned",
+      "391 child processes spawned",
+      "Rapid process spawning",
+      "Deep process tree detected",
+      "Automated file activity (12.4 ops/sec)"
+    ]
+  },
+  "mega_attack.py": {
+    "verdict": "High Risk",
+    "risk_score": 265,
+    "confidence": "High",
+    "reasons": [
+      "Process spawned",
+      "9 child processes spawned",
+      "Rapid process spawning",
+      "Deep process tree detected",
+      "20 files renamed",
+      "Rapid renaming (20 files in 0.00s)",
+      "10 files deleted",
+      "Rapid deletion (10 files in 0.00s)",
+      "High volume file writes",
+      "Extreme automation rate (21128.4 ops/sec)"
+    ]
+  }
+}

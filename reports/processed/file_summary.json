@@ -1,0 +1,26 @@
+{
+  "attack_sim.py": {
+    "created": 5,
+    "modified": 5,
+    "deleted": 0,
+    "renamed": 0,
+    "total_events": 10,
+    "duration_seconds": 0.80335,
+    "process": {
+      "child_count": 391,
+      "max_depth": 243
+    }
+  },
+  "mega_attack.py": {
+    "created": 20,
+    "modified": 41,
+    "deleted": 10,
+    "renamed": 20,
+    "total_events": 91,
+    "duration_seconds": 0.004307,
+    "process": {
+      "child_count": 9,
+      "max_depth": 8
+    }
+  }
+}
