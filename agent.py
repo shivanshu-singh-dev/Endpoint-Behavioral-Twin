@@ -1,42 +1,43 @@
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import time
-import json
 import subprocess
 import signal
 from datetime import datetime, timezone
 from pathlib import Path
 
+from db import db_cursor
+
 TEST_FOLDER = "/home/lab/Test Folder"
-RUN_INDEX = "reports/processed/run_index.json"
 
 ATTACK_USER = "lab"
 PYTHON_BIN = "/usr/bin/python3"
 
-PROCESSOR = "collectors/file_event_processor.py"
 ANALYZER = "collectors/file_analyzer.py"
 
-def start_monitors():
+def start_monitors(run_id):
     print("[agent] Starting monitors")
     monitors = []
+    env = os.environ.copy()
+    env["EBT_RUN_ID"] = str(run_id)
 
     file_mon = subprocess.Popen(
         [PYTHON_BIN, "monitors/file_monitor.py"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        env=env
     )
     monitors.append(file_mon)
 
     proc_mon = subprocess.Popen(
         [PYTHON_BIN, "monitors/process_monitor.py"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        env=env
     )
     monitors.append(proc_mon)
 
     net_mon = subprocess.Popen(
         [PYTHON_BIN, "monitors/network_monitor.py"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        env=env
     )
     monitors.append(net_mon)
 
@@ -55,19 +56,22 @@ def stop_monitors(monitors):
         m.wait()
 
 def record_start_time(filename):
-    Path("reports/processed").mkdir(parents=True, exist_ok=True)
+    start_time = datetime.now(timezone.utc)
+    created_at = start_time
 
-    data = {}
-    if Path(RUN_INDEX).exists():
-        with open(RUN_INDEX) as f:
-            data = json.load(f)
+    with db_cursor() as (conn, cursor):
+        cursor.execute(
+            """
+            INSERT INTO run_index (filename, start_time, created_at)
+            VALUES (%s, %s, %s)
+            """,
+            (filename, start_time, created_at)
+        )
+        run_id = cursor.lastrowid
+        conn.commit()
 
-    data[filename] = datetime.now(timezone.utc).isoformat()
-
-    with open(RUN_INDEX, "w") as f:
-        json.dump(data, f, indent=2)
-
-    print(f"[agent] Start time recorded for {filename}")
+    print(f"[agent] Start time recorded for {filename} (run_id={run_id})")
+    return run_id
 
 
 def run_in_sandbox(filepath):
@@ -92,42 +96,16 @@ def run_in_sandbox(filepath):
 
 
 
-def process_results(filename):
-    # File processor
-    subprocess.run(
-        [PYTHON_BIN, PROCESSOR, filename],
-        check=True
-    )
-
-    # Process processor
-    try:
-        subprocess.run(
-            [PYTHON_BIN, "collectors/process_event_processor.py", filename],
-            check=True
-        )
-    except subprocess.CalledProcessError:
-        print("[agent] Process processor failed — continuing")
-    
-    #Network processor
-    try:
-        subprocess.run(
-            [PYTHON_BIN, "collectors/network_event_processor.py", filename],
-            check=True
-        )
-    except subprocess.CalledProcessError:
-        print("[agent] Network processor failed — continuing")
-
-
+def process_results(run_id):
     # Analyzer
     subprocess.run(
-        [PYTHON_BIN, ANALYZER, filename],
+        [PYTHON_BIN, ANALYZER, str(run_id)],
         check=True
     )
 
 
 
 def main():
-    monitors = start_monitors()
     print("[agent] Waiting for file in Test Folder...")
 
     try:
@@ -148,14 +126,16 @@ def main():
 
                 print(f"[agent] New file detected: {f}")
 
-                record_start_time(f)
+                run_id = record_start_time(f)
+                monitors = start_monitors(run_id)
                 run_in_sandbox(filepath)
 
                 # buffer to make sure all file/process events are logged
                 time.sleep(1)
 
-                process_results(f)
+                process_results(run_id)
 
+                stop_monitors(monitors)
                 print(f"[agent] Analysis complete for {f}")
                 return  #one file per agent run
 
@@ -165,7 +145,8 @@ def main():
         print("[agent] Error:", e)
 
     finally:
-        stop_monitors(monitors)
+        if "monitors" in locals():
+            stop_monitors(monitors)
 
 if __name__ == "__main__":
     main()

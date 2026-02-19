@@ -1,112 +1,17 @@
-import json
 import sys
-from pathlib import Path
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-SUMMARY_FILE = "reports/processed/file_summary.json"
-FINAL_FILE = "reports/final/file_analysis.json"
+from db import db_cursor
 
 
 def analyze(summary):
     score = 0
     reasons = []
 
-    created = summary["created"]
-    modified = summary["modified"]
-    deleted = summary["deleted"]
-    renamed = summary["renamed"]
     total = summary["total_events"]
     duration = summary["duration_seconds"] or 1
-
     ops_per_sec = total / duration
-
-    #Network addon
-    network = summary.get("network", {})
-    total = network.get("total_connections", 0)
-    max_ip = network.get("max_conn_to_single_ip", 0)
-    ports = network.get("ports_used", [])
-    #Network addon end
-
-    #Adding Process here
-    process = summary.get("process", {})
-    child_count = process.get("child_count", 0)
-    max_depth = process.get("max_depth", 0)
-
-    if child_count >= 1:
-        score += 5
-        reasons.append("Process execution observed")
-
-
-    if child_count >= 5:
-        score += 20
-        reasons.append(f"Process burst ({child_count} children)")
-
-    if child_count >= 3 and duration <= 2:
-        score += 25
-        reasons.append("Rapid process spawning")
-
-    if max_depth >= 5:
-        score += 30
-        reasons.append("Very deep process tree")
-    elif max_depth >= 3:
-        score += 20
-        reasons.append("Deep process tree")
-
-
-    if child_count >= 5 and summary["renamed"] == 0 and summary["deleted"] == 0:
-        score -= 15
-        reasons.append("Process burst without destructive file behavior")
-
-    #Process ends
-
-    #Adding Network
-    if total >= 1:
-        score += 5
-        reasons.append("Outbound network activity observed")
-
-    # Repeated beaconing
-    if max_ip >= 5:
-        score += 20
-        reasons.append("Repeated connections to same IP")
-
-    if total >= 3 and duration <= 3:
-        score += 25
-        reasons.append("Rapid outbound connections")
-
-    # Uncommon ports
-    if any(p >= 1024 for p in ports):
-        score += 15
-        reasons.append("Uncommon destination port used")
-
-    # High volume
-    if total >= 10:
-        score += 30
-        reasons.append("High volume outbound connections")
-
-    # Dampening: network-only
-    if total >= 5 and summary["renamed"] == 0 and summary["deleted"] == 0:
-        score -= 15
-        reasons.append("Network activity without destructive file behavior")
-    #Network Ends
-
-    if renamed >= 5:
-        score += 45
-        reasons.append(f"{renamed} files renamed")
-
-    if renamed >= 3 and duration <= 3:
-        score += 30
-        reasons.append(f"Rapid renaming ({renamed} files in {duration:.2f}s)")
-
-    if deleted >= 5:
-        score += 30
-        reasons.append(f"{deleted} files deleted")
-
-    if deleted >= 3 and duration <= 3:
-        score += 25
-        reasons.append(f"Rapid deletion ({deleted} files in {duration:.2f}s)")
-
-    if created + modified >= 15:
-        score += 20
-        reasons.append("High volume file writes")
 
     if ops_per_sec >= 25:
         score += 35
@@ -132,38 +37,176 @@ def analyze(summary):
         "reasons": reasons
     }
 
+def get_file_summary(run_id):
+    summary = {
+        "created": 0,
+        "modified": 0,
+        "deleted": 0,
+        "renamed": 0,
+        "total_events": 0,
+        "duration_seconds": 0,
+        "network": {},
+        "process": {}
+    }
+
+    with db_cursor() as (_, cursor):
+        cursor.execute(
+            """
+            SELECT MIN(e.timestamp) AS min_ts,
+                   MAX(e.timestamp) AS max_ts,
+                   COUNT(*) AS total_events
+            FROM event e
+            JOIN file_event fe ON fe.event_id = e.event_id
+            WHERE e.run_id = %s
+            """,
+            (run_id,)
+        )
+        row = cursor.fetchone()
+        if row and row["total_events"]:
+            summary["total_events"] = row["total_events"]
+            if row["min_ts"] and row["max_ts"]:
+                summary["duration_seconds"] = (
+                    row["max_ts"] - row["min_ts"]
+                ).total_seconds()
+
+        cursor.execute(
+            """
+            SELECT fe.event_type, COUNT(*) AS count
+            FROM file_event fe
+            JOIN event e ON fe.event_id = e.event_id
+            WHERE e.run_id = %s
+            GROUP BY fe.event_type
+            """,
+            (run_id,)
+        )
+        for row in cursor.fetchall():
+            summary[row["event_type"]] = row["count"]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total_connections,
+                   COUNT(DISTINCT ne.remote_ip) AS unique_ips
+            FROM network_event ne
+            JOIN event e ON ne.event_id = e.event_id
+            WHERE e.run_id = %s
+            """,
+            (run_id,)
+        )
+        net_row = cursor.fetchone() or {}
+        max_conn = 0
+        cursor.execute(
+            """
+            SELECT MAX(cnt) AS max_conn
+            FROM (
+                SELECT COUNT(*) AS cnt
+                FROM network_event ne
+                JOIN event e ON ne.event_id = e.event_id
+                WHERE e.run_id = %s
+                GROUP BY ne.remote_ip
+            ) AS ip_counts
+            """,
+            (run_id,)
+        )
+        max_row = cursor.fetchone()
+        if max_row and max_row["max_conn"]:
+            max_conn = max_row["max_conn"]
+
+        cursor.execute(
+            """
+            SELECT DISTINCT ne.remote_port
+            FROM network_event ne
+            JOIN event e ON ne.event_id = e.event_id
+            WHERE e.run_id = %s
+            ORDER BY ne.remote_port
+            """,
+            (run_id,)
+        )
+        ports = [row["remote_port"] for row in cursor.fetchall()]
+
+        summary["network"] = {
+            "total_connections": net_row.get("total_connections", 0) or 0,
+            "unique_ips": net_row.get("unique_ips", 0) or 0,
+            "max_conn_to_single_ip": max_conn or 0,
+            "ports_used": ports
+        }
+
+        cursor.execute(
+            """
+            SELECT COUNT(DISTINCT pe.pid) AS child_count
+            FROM process_event pe
+            JOIN event e ON pe.event_id = e.event_id
+            WHERE e.run_id = %s
+            """,
+            (run_id,)
+        )
+        proc_row = cursor.fetchone() or {}
+        cursor.execute(
+            """
+            SELECT MAX(cnt) AS max_depth
+            FROM (
+                SELECT COUNT(*) AS cnt
+                FROM process_event pe
+                JOIN event e ON pe.event_id = e.event_id
+                WHERE e.run_id = %s
+                GROUP BY pe.ppid
+            ) AS parent_counts
+            """,
+            (run_id,)
+        )
+        depth_row = cursor.fetchone() or {}
+
+        summary["process"] = {
+            "child_count": proc_row.get("child_count", 0) or 0,
+            "max_depth": depth_row.get("max_depth", 0) or 0
+        }
+
+    return summary
+
+
+def store_analysis(run_id, analysis):
+    with db_cursor() as (conn, cursor):
+        cursor.execute(
+            """
+            INSERT INTO file_analysis (run_id, verdict, risk_score, confidence)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                verdict = VALUES(verdict),
+                risk_score = VALUES(risk_score),
+                confidence = VALUES(confidence)
+            """,
+            (
+                run_id,
+                analysis["verdict"],
+                analysis["risk_score"],
+                analysis["confidence"]
+            )
+        )
+        cursor.execute(
+            "DELETE FROM analysis_reason WHERE run_id = %s",
+            (run_id,)
+        )
+        for reason in analysis["reasons"]:
+            cursor.execute(
+                """
+                INSERT INTO analysis_reason (run_id, reason_text)
+                VALUES (%s, %s)
+                """,
+                (run_id, reason)
+            )
+        conn.commit()
+
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python3 file_analyzer.py <input_filename>")
+        print("Usage: python3 file_analyzer.py <run_id>")
         sys.exit(1)
 
-    filename = sys.argv[1]
+    run_id = int(sys.argv[1])
+    summary = get_file_summary(run_id)
+    result = analyze(summary)
+    store_analysis(run_id, result)
 
-    if not Path(SUMMARY_FILE).exists():
-        raise RuntimeError("file_summary.json not found")
-
-    with open(SUMMARY_FILE) as f:
-        summaries = json.load(f)
-
-    if filename not in summaries:
-        raise RuntimeError(f"No summary found for {filename}")
-
-    result = analyze(summaries[filename])
-
-    Path("reports/final").mkdir(parents=True, exist_ok=True)
-
-    final_data = {}
-    if Path(FINAL_FILE).exists():
-        with open(FINAL_FILE) as f:
-            final_data = json.load(f)
-
-    final_data[filename] = result
-
-    with open(FINAL_FILE, "w") as f:
-        json.dump(final_data, f, indent=2)
-
-    print(f"[agent] Updated analysis for {filename}")
+    print(f"[agent] Updated analysis for run_id={run_id}")
 
 
 if __name__ == "__main__":

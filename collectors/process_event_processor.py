@@ -3,14 +3,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from db import db_cursor
+
 RAW_LOG = "reports/raw/process_events.log"
-RUN_INDEX = "reports/processed/run_index.json"
-SUMMARY_FILE = "reports/processed/file_summary.json"
-
-
-def load_start_time(filename):
-    with open(RUN_INDEX) as f:
-        return datetime.fromisoformat(json.load(f)[filename])
 
 
 def load_events_after(start_time):
@@ -29,46 +24,47 @@ def load_events_after(start_time):
     return events
 
 
-def analyze_processes(events):
-    children = set()
-    parents = {}
-
-    for e in events:
-        parents.setdefault(e["ppid"], []).append(e["pid"])
-        children.add(e["pid"])
-
-    max_depth = max((len(v) for v in parents.values()), default=0)
-
-    return {
-        "child_count": len(children),
-        "max_depth": max_depth
-    }
-
-
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python3 process_event_processor.py <filename>")
+        print("Usage: python3 process_event_processor.py <run_id>")
         return
 
-    filename = sys.argv[1]
-    start = load_start_time(filename)
+    run_id = int(sys.argv[1])
+    with db_cursor() as (_, cursor):
+        cursor.execute(
+            "SELECT start_time FROM run_index WHERE run_id = %s",
+            (run_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise RuntimeError(f"No start time recorded for run_id={run_id}")
+        start = row["start_time"]
     events = load_events_after(start)
-    proc_summary = analyze_processes(events)
+    if not events:
+        print("[agent] No process events to store")
+        return
 
-    data = {}
-    if Path(SUMMARY_FILE).exists():
-        with open(SUMMARY_FILE) as f:
-            data = json.load(f)
+    with db_cursor() as (conn, cursor):
+        for e in events:
+            cursor.execute(
+                """
+                INSERT INTO event (run_id, timestamp, category)
+                VALUES (%s, %s, %s)
+                """,
+                (run_id, datetime.fromisoformat(e["timestamp"]), "process")
+            )
+            event_id = cursor.lastrowid
+            cursor.execute(
+                """
+                INSERT INTO process_event (event_id, pid, ppid, process_name)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (event_id, e["pid"], e["ppid"], e["name"])
+            )
+        conn.commit()
 
-    data.setdefault(filename, {})
-    data[filename]["process"] = proc_summary
-
-    with open(SUMMARY_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-
-    print("[agent] Process summary updated")
+    print("[agent] Process events stored")
 
 
 if __name__ == "__main__":
     main()
-
