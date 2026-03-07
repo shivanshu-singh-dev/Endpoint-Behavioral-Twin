@@ -1,9 +1,10 @@
 import os
 import json
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
+
+from utils.time_utils import now_ist
 
 WATCH_DIR = "/home/lab/ebt_config"
 LOG_FILE = "reports/raw/config_events.log"
@@ -30,7 +31,7 @@ try:
         now = snapshot()
         if now != last:
             event = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": now_ist().isoformat(),
                 "type": "config_change"
             }
             with open(LOG_FILE, "a") as f:

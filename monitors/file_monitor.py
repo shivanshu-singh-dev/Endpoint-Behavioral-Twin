@@ -3,12 +3,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
-from datetime import datetime, timezone
-
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from db import db_cursor
+from utils.time_utils import now_ist
 
 # ---- CONFIG ----
 WATCH_PATH = "/home/lab/lab_docs"
@@ -21,7 +20,7 @@ class FileEventHandler(FileSystemEventHandler):
         self.run_id = run_id
 
     def log_event(self, event_type, src_path, dest_path=None):
-        event_timestamp = datetime.now(timezone.utc)
+        event_timestamp = now_ist()
         mapped_type = "renamed" if event_type == "moved" else event_type
         with db_cursor() as (conn, cursor):
             cursor.execute(

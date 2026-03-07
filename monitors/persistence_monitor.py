@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
+from utils.time_utils import now_ist
 
 LOG_FILE = "reports/raw/persistence_events.log"
 AUTOSTART = os.path.expanduser("~/.config/autostart")
@@ -41,7 +42,7 @@ try:
 
         if hash_data(cron_now) != last_cron:
             event = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": now_ist().isoformat(),
                 "type": "crontab_change"
             }
             with open(LOG_FILE, "a") as f:
@@ -50,7 +51,7 @@ try:
 
         if hash_data(",".join(auto_now)) != last_auto:
             event = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": now_ist().isoformat(),
                 "type": "autostart_change"
             }
             with open(LOG_FILE, "a") as f:

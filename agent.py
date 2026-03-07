@@ -7,10 +7,10 @@ import subprocess
 import signal
 import shutil
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 from db import db_cursor
+from utils.time_utils import now_ist
 
 TEST_FOLDER = "/home/lab/Test Folder"
 
@@ -91,7 +91,7 @@ def stop_monitors(monitors):
 
 
 def record_start_time(filename):
-    start_time = datetime.now(timezone.utc)
+    start_time = now_ist()
     created_at = start_time
 
     with db_cursor() as (conn, cursor):
@@ -128,11 +128,32 @@ def run_in_sandbox(filepath):
     ]
 
     try:
-        subprocess.run(cmd, check=True, timeout=20)
+        result = subprocess.run(
+            cmd,
+            timeout=40,
+            capture_output=True,
+            text=True
+        )
+
+        output = result.stdout + result.stderr
+
+        if "Finished with result: timeout" in output:
+            print("[agent] Sandbox stopped: execution exceeded 30s limit")
+
+        elif "status=15/TERM" in output:
+            print("[agent] Sandbox stopped: process terminated by systemd")
+
+        elif result.returncode == 0:
+            print("[agent] Sandbox execution completed normally")
+
+        else:
+            print(f"[agent] Sandbox exited with code {result.returncode}")
+
     except subprocess.TimeoutExpired:
-        print("[agent] Sandbox execution timed out")
-    except subprocess.CalledProcessError as e:
-        print(f"[agent] Sandbox execution failed: {e}")
+        print("[agent] Sandbox controller timeout (python timeout reached before systemd limit)")
+
+    except Exception as e:
+        print(f"[agent] Sandbox error: {e}")
 
 
 def process_results(run_id):

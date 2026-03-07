@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timezone
 
 from db import db_cursor
+from utils.time_utils import now_ist
 
 RUN_ID_ENV = "EBT_RUN_ID"
 
@@ -28,7 +29,7 @@ try:
 
             seen.add(pid)
 
-            event_timestamp = datetime.now(timezone.utc)
+            event_timestamp = now_ist()
             with db_cursor() as (conn, cursor):
                 cursor.execute(
                     """
