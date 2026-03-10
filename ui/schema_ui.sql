@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('researcher', 'admin', 'guest') NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+

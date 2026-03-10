@@ -87,3 +87,4 @@ class TimelinePoint(BaseModel):
     category: str
     offset_seconds: float
     timestamp: datetime
+

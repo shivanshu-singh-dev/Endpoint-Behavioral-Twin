@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Layout from './components/Layout'
 import { api } from './services/api'
@@ -30,13 +30,29 @@ function RunDetailLoader({ cache, lineCache, setCache, setLineCache }) {
   return <RunDetailPage detail={cache[runId]} timeline={lineCache[runId] || []} />
 }
 
-function AppRoutes({ user, dashboard, runs, filters, setFilters, searchRuns, rules, saveRules, users, adminActions, runDetail, timeline, setRunDetail, setTimeline }) {
+function AppRoutes({
+  user,
+  canTuneRules,
+  dashboard,
+  runs,
+  filters,
+  setFilters,
+  searchRuns,
+  rules,
+  saveRules,
+  users,
+  adminActions,
+  runDetail,
+  timeline,
+  setRunDetail,
+  setTimeline,
+}) {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage data={dashboard} />} />
       <Route path="/runs" element={<RunsPage runs={runs} filters={filters} setFilters={setFilters} searchRuns={searchRuns} />} />
       <Route path="/runs/:id" element={<RunDetailLoader cache={runDetail} lineCache={timeline} setCache={setRunDetail} setLineCache={setTimeline} />} />
-      <Route path="/rules" element={(user.role === 'admin' || user.role === 'researcher') ? <RuleSettingsPage rules={rules} onSave={saveRules} /> : <Navigate to="/" />} />
+      <Route path="/rules" element={canTuneRules ? <RuleSettingsPage rules={rules} onSave={saveRules} canEdit={canTuneRules} /> : <Navigate to="/" />} />
       <Route path="/admin" element={user.role === 'admin' ? <AdminPage users={users} {...adminActions} /> : <Navigate to="/" />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
@@ -45,7 +61,7 @@ function AppRoutes({ user, dashboard, runs, filters, setFilters, searchRuns, rul
 
 export default function App() {
   const [user, setUser] = useState(null)
-  const [theme, setTheme] = useState('dark')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [error, setError] = useState('')
   const [dashboard, setDashboard] = useState({ total_runs: 0, avg_risk_score: 0, verdict_distribution: [], recent_runs: [] })
   const [runs, setRuns] = useState([])
@@ -57,15 +73,19 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const normalizedRole = useMemo(() => user?.role?.toLowerCase?.() || '', [user])
+  const canTuneRules = normalizedRole === 'admin' || normalizedRole === 'researcher'
+
   const hydrate = async () => {
     try {
       const me = await api.me()
       setUser(me)
+      const role = me?.role?.toLowerCase?.() || ''
       const [dashData, runData] = await Promise.all([api.dashboard(), api.runs({})])
       setDashboard(dashData)
       setRuns(runData)
-      if (me.role !== 'guest') setRules(await api.getRules())
-      if (me.role === 'admin') setUsers(await api.users())
+      if (role === 'admin' || role === 'researcher') setRules(await api.getRules())
+      if (role === 'admin') setUsers(await api.users())
     } catch {
       setUser(null)
     }
@@ -123,12 +143,14 @@ export default function App() {
     <Protected user={user}>
       <Layout
         user={user}
-        theme={theme}
-        onThemeToggle={() => setTheme((prev) => prev === 'dark' ? 'light' : 'dark')}
+        canTuneRules={canTuneRules}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
         onLogout={handleLogout}
       >
         <AppRoutes
           user={user}
+          canTuneRules={canTuneRules}
           dashboard={dashboard}
           runs={runs}
           filters={filters}
@@ -147,3 +169,4 @@ export default function App() {
     </Protected>
   )
 }
+

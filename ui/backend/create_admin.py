@@ -1,3 +1,4 @@
+
 from getpass import getpass
 
 from app.database import ui_db
@@ -24,3 +25,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

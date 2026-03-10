@@ -39,3 +39,4 @@ export const api = {
   deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
   cleanup: () => request('/admin/cleanup', { method: 'POST' }),
 }
+

@@ -1,25 +1,63 @@
 import { Link, useLocation } from 'react-router-dom'
 
-export default function Layout({ user, theme, onThemeToggle, onLogout, children }) {
+const navItems = [
+  { to: '/', label: 'Dashboard', icon: '📊' },
+  { to: '/runs', label: 'Runs', icon: '🧪' },
+]
+
+export default function Layout({ user, canTuneRules, sidebarCollapsed, onToggleSidebar, onLogout, children }) {
   const location = useLocation()
 
   return (
-    <div className={`app ${theme}`}>
+    <div className={`shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className="sidebar">
-        <h1>EBT Console</h1>
-        <p className="role">{user.username} · {user.role}</p>
-        <nav>
-          <Link className={location.pathname === '/' ? 'active' : ''} to="/">Dashboard</Link>
-          <Link className={location.pathname.startsWith('/runs') ? 'active' : ''} to="/runs">Runs</Link>
-          {(user.role === 'researcher' || user.role === 'admin') && <Link className={location.pathname === '/rules' ? 'active' : ''} to="/rules">Rule Tuning</Link>}
-          {user.role === 'admin' && <Link className={location.pathname === '/admin' ? 'active' : ''} to="/admin">Admin</Link>}
-        </nav>
-        <div className="actions">
-          <button onClick={onThemeToggle}>Toggle Theme</button>
-          <button onClick={onLogout}>Logout</button>
+        <div className="brand-row">
+          <div className="brand-mark">🛡️</div>
+          {!sidebarCollapsed && (
+            <div>
+              <h1>EBT SOC</h1>
+              <p>Endpoint Behavioral Twin</p>
+            </div>
+          )}
         </div>
+
+        <nav className="nav-links">
+          {navItems.map((item) => (
+            <Link key={item.to} className={location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to)) ? 'active' : ''} to={item.to}>
+              <span>{item.icon}</span>
+              {!sidebarCollapsed && item.label}
+            </Link>
+          ))}
+          {canTuneRules && (
+            <Link className={location.pathname === '/rules' ? 'active' : ''} to="/rules">
+              <span>⚙️</span>
+              {!sidebarCollapsed && 'Rule Tuning'}
+            </Link>
+          )}
+          {user.role === 'admin' && (
+            <Link className={location.pathname === '/admin' ? 'active' : ''} to="/admin">
+              <span>🧰</span>
+              {!sidebarCollapsed && 'Admin'}
+            </Link>
+          )}
+        </nav>
       </aside>
-      <main>{children}</main>
+
+      <section className="content-wrap">
+        <header className="topbar">
+          <button className="ghost-btn" onClick={onToggleSidebar}>☰</button>
+          <div className="user-chip">
+            <span className="avatar">{user.username[0]?.toUpperCase() || 'U'}</span>
+            <div>
+              <strong>{user.username}</strong>
+              <small>{user.role}</small>
+            </div>
+          </div>
+          <button className="primary-btn" onClick={onLogout}>Logout</button>
+        </header>
+        <main className="main-content">{children}</main>
+      </section>
     </div>
   )
 }
+

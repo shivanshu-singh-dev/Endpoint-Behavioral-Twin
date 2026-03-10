@@ -1,8 +1,19 @@
+const filterLabels = {
+  filename: 'Filename',
+  verdict: 'Verdict',
+  min_score: 'Min Score',
+  remote_ip: 'Remote IP',
+  remote_port: 'Port',
+  process_name: 'Process',
+  date_range: 'Range',
+}
+
 export default function FilterChips({ filters, onChange, onSearch }) {
   const update = (key, value) => onChange({ ...filters, [key]: value })
+  const activeFilters = Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined)
 
   return (
-    <div className="card">
+    <div className="card hover-lift">
       <h3>SOC Filters</h3>
       <div className="chip-grid">
         <label>Filename <input value={filters.filename || ''} onChange={(e) => update('filename', e.target.value)} /></label>
@@ -20,11 +31,18 @@ export default function FilterChips({ filters, onChange, onSearch }) {
           </select>
         </label>
       </div>
+
+      <div className="active-chips">
+        {activeFilters.map(([key, value]) => (
+          <span key={key} className="filter-chip">{filterLabels[key] || key}: {value}</span>
+        ))}
+      </div>
+
       <div className="quick-row">
-        <button onClick={() => onChange({ verdict: 'High Risk', min_score: '60', date_range: '7d' })}>High Risk (7d)</button>
-        <button onClick={() => onChange({ verdict: 'Suspicious', date_range: '24h' })}>Suspicious (24h)</button>
-        <button onClick={() => onChange({})}>Clear</button>
-        <button onClick={onSearch}>Apply Filters</button>
+        <button className="ghost-btn" onClick={() => onChange({ verdict: 'High Risk', min_score: '60', date_range: '7d' })}>High Risk</button>
+        <button className="ghost-btn" onClick={() => onChange({ verdict: 'Suspicious', date_range: '24h' })}>Suspicious</button>
+        <button className="ghost-btn" onClick={() => onChange({})}>Clear</button>
+        <button className="primary-btn" onClick={onSearch}>Apply Filters</button>
       </div>
     </div>
   )

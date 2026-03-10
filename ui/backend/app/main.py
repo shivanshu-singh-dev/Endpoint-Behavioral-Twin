@@ -373,3 +373,4 @@ def cleanup_logs(_: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
                 cursor.execute(f"TRUNCATE TABLE {table}")
         conn.commit()
     return {"status": "cleaned"}
+
