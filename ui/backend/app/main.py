@@ -326,21 +326,37 @@ def get_users(_: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
 
 @app.post("/api/admin/users", response_model=UserView)
 def create_user(payload: UserCreate, _: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
+    username = payload.username.strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+
     with ui_db() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT user_id FROM users WHERE username = %s", (payload.username,))
+            cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
             if cursor.fetchone():
                 raise HTTPException(status_code=409, detail="Username already exists")
             cursor.execute(
                 "INSERT INTO users (username, password_hash, role, created_at) VALUES (%s, %s, %s, NOW())",
-                (payload.username, hash_password(payload.password), payload.role),
+                (username, hash_password(payload.password), payload.role),
             )
+
             user_id = cursor.lastrowid
+            if not user_id:
+                cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+                inserted = cursor.fetchone()
+                if not inserted:
+                    raise HTTPException(status_code=500, detail="Failed to create user")
+                user_id = inserted["user_id"]
+
             cursor.execute(
                 "SELECT user_id, username, role, created_at FROM users WHERE user_id = %s",
                 (user_id,),
             )
             created_user = cursor.fetchone()
+
+    if not created_user:
+        raise HTTPException(status_code=500, detail="Failed to load created user")
+
     return created_user
 
 
@@ -358,8 +374,7 @@ def delete_user(user_id: int, _: Annotated[dict, Depends(require_role([Role.ADMI
 def cleanup_logs(_: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
     with ebt_db() as conn:
         with conn.cursor() as cursor:
-            # Delete child tables first to satisfy FK constraints and allow reset.
-            for table in [
+            tables = [
                 "analysis_reason",
                 "file_analysis",
                 "file_event",
@@ -369,8 +384,13 @@ def cleanup_logs(_: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
                 "config_event",
                 "event",
                 "run_index",
-            ]:
-                cursor.execute(f"TRUNCATE TABLE {table}")
+            ]
+
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+            try:
+                for table in tables:
+                    cursor.execute(f"TRUNCATE TABLE {table}")
+            finally:
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
         conn.commit()
     return {"status": "cleaned"}
-

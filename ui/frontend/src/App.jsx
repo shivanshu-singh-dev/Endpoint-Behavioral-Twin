@@ -129,7 +129,10 @@ export default function App() {
     },
     onCleanup: async () => {
       await api.cleanup()
-      alert('EBT event tables truncated successfully.')
+      setRuns([])
+      setDashboard({ total_runs: 0, avg_risk_score: 0, verdict_distribution: [], recent_runs: [] })
+      setRunDetail({})
+      setTimeline({})
     },
   }
 
@@ -169,4 +172,3 @@ export default function App() {
     </Protected>
   )
 }
-

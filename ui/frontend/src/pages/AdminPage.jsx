@@ -2,6 +2,50 @@ import { useState } from 'react'
 
 export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup }) {
   const [form, setForm] = useState({ username: '', password: '', role: 'guest' })
+  const [message, setMessage] = useState('')
+
+  const createUser = async () => {
+    const payload = {
+      ...form,
+      username: form.username.trim(),
+    }
+
+    if (!payload.username) {
+      setMessage('Username is required.')
+      return
+    }
+
+    if (!payload.password || payload.password.length < 8) {
+      setMessage('Password must be at least 8 characters long.')
+      return
+    }
+
+    try {
+      await onCreateUser(payload)
+      setForm({ username: '', password: '', role: payload.role })
+      setMessage('User created successfully.')
+    } catch (error) {
+      setMessage(error.message || 'Failed to create user.')
+    }
+  }
+
+  const deleteUser = async (userId) => {
+    try {
+      await onDeleteUser(userId)
+      setMessage('User deleted successfully.')
+    } catch (error) {
+      setMessage(error.message || 'Failed to delete user.')
+    }
+  }
+
+  const cleanup = async () => {
+    try {
+      await onCleanup()
+      setMessage('Logs cleaned successfully.')
+    } catch (error) {
+      setMessage(error.message || 'Failed to clean logs.')
+    }
+  }
 
   return (
     <div className="page fade-in">
@@ -24,7 +68,8 @@ export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup
               </select>
             </label>
           </div>
-          <button className="primary-btn" onClick={() => onCreateUser(form)}>➕ Create User</button>
+          <button className="primary-btn" onClick={createUser}>➕ Create User</button>
+          {message && <p className="muted">{message}</p>}
 
           <table className="runs-table compact">
             <thead><tr><th>User</th><th>Role</th><th>Action</th></tr></thead>
@@ -33,7 +78,7 @@ export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup
                 <tr key={user.user_id}>
                   <td>{user.username}</td>
                   <td><span className="verdict-badge low">{user.role}</span></td>
-                  <td><button className="ghost-btn" onClick={() => onDeleteUser(user.user_id)}>🗑 Delete</button></td>
+                  <td><button className="ghost-btn" onClick={() => deleteUser(user.user_id)}>🗑 Delete</button></td>
                 </tr>
               ))}
             </tbody>
@@ -43,10 +88,9 @@ export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup
         <div className="card hover-lift">
           <h3>🧹 Log Hygiene</h3>
           <p>Admin-only cleanup action truncates all EBT event and run tables and resets counters.</p>
-          <button className="danger-btn" onClick={onCleanup}>⚠ Clean Logs</button>
+          <button className="danger-btn" onClick={cleanup}>⚠ Clean Logs</button>
         </div>
       </div>
     </div>
   )
 }
-
