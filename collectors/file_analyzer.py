@@ -17,48 +17,68 @@ def analyze(summary):
         except:
             pass
 
+    # Normalize weights so they always perfectly sum to 100
+    weight_total = sum(rules.values()) if sum(rules.values()) > 0 else 1
+    normalized = {k: (v / weight_total) * 100 for k, v in rules.items()}
+
     score = 0
     reasons = []
 
     total = summary["total_events"]
     duration = summary["duration_seconds"] or 1
     ops_per_sec = total / duration
-
+    
+    file_score = 0
     if ops_per_sec >= 25:
-        score += rules["file_weight"] * 7
+        file_score = normalized.get("file_weight", 0)
         reasons.append(f"Extreme automation rate ({ops_per_sec:.1f} ops/sec)")
     elif ops_per_sec >= 10:
-        score += rules["file_weight"] * 4
+        file_score = normalized.get("file_weight", 0) * 0.6
         reasons.append(f"Automated file activity ({ops_per_sec:.1f} ops/sec)")
 
     network = summary["network"]
     process = summary["process"]
 
+    net_score = 0
     if network.get("total_connections", 0) >= 10:
-        score += rules["network_weight"] * 2
+        net_score = normalized.get("network_weight", 0)
+        reasons.append("High volume of network connections")
 
+    pers_score = 0
     if summary.get("persistence", {}).get("total_events", 0) > 0:
-        score += rules["persistence_weight"] * 3
+        pers_score = normalized.get("persistence_weight", 0)
         reasons.append("Persistence behavior observed")
 
+    conf_score = 0
     if summary.get("config", {}).get("total_events", 0) > 0:
-        score += rules["config_weight"] * 2
+        conf_score = normalized.get("config_weight", 0)
         reasons.append("Configuration changes observed")
 
+    proc_score = 0
     if process.get("child_count", 0) > 15:
-        score += rules["process_weight"] * 3
+        proc_score = normalized.get("process_weight", 0)
+        reasons.append("Excessive process spawning")
 
+    score = file_score + net_score + pers_score + conf_score + proc_score
     score = min(score, 100)
+
+    signals = sum(1 for s in [file_score, net_score, pers_score, conf_score, proc_score] if s > 0)
+
+    if signals >= 3:
+        confidence = "High"
+    elif signals == 2:
+        confidence = "Medium"
+    elif signals == 1:
+        confidence = "Low"
+    else:
+        confidence = "None"
 
     if score >= 70:
         verdict = "High Risk"
-        confidence = "High"
     elif score >= 40:
-        verdict = "Suspicious"
-        confidence = "Medium"
+        verdict = "Medium Risk"
     else:
-        verdict = "Benign"
-        confidence = "Low"
+        verdict = "Unlikely"
 
     return {
         "verdict": verdict,

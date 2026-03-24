@@ -25,7 +25,7 @@ function verdictCount(data, keyword) {
 
 export default function DashboardPage({ data }) {
   const highRisk = verdictCount(data, 'high')
-  const mediumRisk = verdictCount(data, 'suspicious') + verdictCount(data, 'medium')
+  const mediumRisk = verdictCount(data, 'medium')
   const lowRisk = Math.max(data.total_runs - highRisk - mediumRisk, 0)
 
   const verdictOptions = {
@@ -54,7 +54,7 @@ export default function DashboardPage({ data }) {
         colorByPoint: true
       }
     },
-    xAxis: { categories: ['Low', 'Medium', 'High'] },
+    xAxis: { categories: ['Unlikely', 'Medium Risk', 'High Risk'] },
     series: [{
       name: 'Runs',
       data: [lowRisk, mediumRisk, highRisk]

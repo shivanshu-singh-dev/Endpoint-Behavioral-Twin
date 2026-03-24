@@ -31,11 +31,12 @@ export default function RuleSettingsPage({ rules, onSave, canEdit = false }) {
       <div className="card hover-lift" style={{ marginBottom: "1.5rem" }}>
         <h3>Default Tuning Presets</h3>
         <div className="quick-row">
+          <button className="ghost-btn" onClick={() => setPreset({ file_weight: 4, process_weight: 5, network_weight: 8, persistence_weight: 12, config_weight: 2 })}>Ideal</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 7, network_weight: 10, persistence_weight: 12, config_weight: 4 })}>Default</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 5, network_weight: 5, persistence_weight: 20, config_weight: 5 })}>Persistence Focused</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 5, network_weight: 5, persistence_weight: 5, config_weight: 20 })}>Config Focused</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 5, network_weight: 20, persistence_weight: 5, config_weight: 5 })}>Network Focused</button>
-          <button className="ghost-btn" onClick={() => setPreset({ file_weight: 10, process_weight: 10, network_weight: 10, persistence_weight: 10, config_weight: 10 })}>Balanced</button>
+          <button className="ghost-btn" onClick={() => setPreset({ file_weight: 7.5, process_weight: 7.5, network_weight: 7.5, persistence_weight: 7.5, config_weight: 7.5 })}>Balanced</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 7, process_weight: 12, network_weight: 15, persistence_weight: 18, config_weight: 8 })}>Malware Ideal Tuning</button>
         </div>
       </div>
