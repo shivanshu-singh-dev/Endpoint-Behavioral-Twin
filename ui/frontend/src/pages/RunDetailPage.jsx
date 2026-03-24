@@ -1,31 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2'
-import {
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Filler,
-  Legend,
-  LineElement,
-  LinearScale,
-  PointElement,
-  RadialLinearScale,
-  Tooltip,
-} from 'chart.js'
+import Highcharts from 'highcharts'
+import HighchartsReact from 'highcharts-react-official'
+import highcharts3d from 'highcharts/highcharts-3d'
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-)
+if (typeof highcharts3d === 'function' && !Highcharts.is3dEnabled) {
+  highcharts3d(Highcharts)
+  Highcharts.is3dEnabled = true
+}
 
 const categoryPalette = {
   file: '#2563eb',
@@ -91,43 +72,60 @@ export default function RunDetailPage({ detail, timeline }) {
     return Array.from(buckets.entries()).sort((a, b) => a[0] - b[0])
   }, [filteredTimeline])
 
-  const distributionData = {
-    labels: Object.keys(categoryCounts),
-    datasets: [
-      {
-        data: Object.keys(categoryCounts).map((key) => categoryCounts[key]),
-        backgroundColor: Object.keys(categoryCounts).map((key) => categoryPalette[key] || '#64748b'),
-        borderWidth: 0,
-      },
-    ],
+  const distributionOptions = {
+    chart: { type: 'pie', options3d: { enabled: true, alpha: 45 } },
+    plotOptions: {
+      pie: {
+        innerSize: '40%',
+        depth: 45,
+        dataLabels: { enabled: false },
+        showInLegend: true,
+        colors: Object.keys(categoryCounts).map((key) => categoryPalette[key] || '#64748b')
+      }
+    },
+    series: [{
+      name: 'Events',
+      data: Object.keys(categoryCounts).map((key) => ({ name: key, y: categoryCounts[key] }))
+    }]
   }
 
-  const timelineChartData = {
-    labels: timelineBuckets.map(([second]) => `${second}s`),
-    datasets: [
-      {
-        label: selectedCategory === 'all' ? 'All Events' : `${selectedCategory} events`,
-        data: timelineBuckets.map(([, count]) => count),
-        borderColor: selectedCategory === 'all' ? '#2563eb' : categoryPalette[selectedCategory] || '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.14)',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 2,
-      },
-    ],
+  const timelineOptions = {
+    chart: { type: 'area', zooming: { type: 'x' } },
+    xAxis: { categories: timelineBuckets.map(([second]) => `${second}s`) },
+    plotOptions: {
+      area: {
+        fillColor: {
+          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+          stops: [
+            [0, 'rgba(37, 99, 235, 0.4)'],
+            [1, 'rgba(37, 99, 235, 0.05)']
+          ]
+        },
+        lineColor: selectedCategory === 'all' ? '#2563eb' : categoryPalette[selectedCategory] || '#2563eb',
+        lineWidth: 2,
+        marker: { radius: 3 }
+      }
+    },
+    series: [{
+      name: selectedCategory === 'all' ? 'All Events' : `${selectedCategory} events`,
+      data: timelineBuckets.map(([, count]) => count)
+    }]
   }
 
-  const intensityData = {
-    labels: Object.keys(categoryCounts),
-    datasets: [
-      {
-        label: 'Behavior Intensity',
-        data: Object.keys(categoryCounts).map((key) => categoryCounts[key]),
-        backgroundColor: 'rgba(37, 99, 235, 0.15)',
-        borderColor: '#2563eb',
-        borderWidth: 2,
-      },
-    ],
+  const intensityOptions = {
+    chart: { type: 'column', options3d: { enabled: true, alpha: 15, beta: 15, depth: 50, viewDistance: 25 } },
+    xAxis: { categories: Object.keys(categoryCounts) },
+    plotOptions: {
+      column: {
+        depth: 25,
+        colors: Object.keys(categoryCounts).map((key) => categoryPalette[key] || '#64748b'),
+        colorByPoint: true
+      }
+    },
+    series: [{
+      name: 'Behavior Intensity',
+      data: Object.keys(categoryCounts).map((key) => categoryCounts[key])
+    }]
   }
 
   return (
@@ -175,18 +173,9 @@ export default function RunDetailPage({ detail, timeline }) {
         </div>
 
         <div className="viz-canvas fade-scale" key={`${vizMode}-${selectedCategory}`}>
-          {vizMode === 'distribution' && <Doughnut data={distributionData} />}
-          {vizMode === 'timeline' && <Line data={timelineChartData} options={{ plugins: { legend: { display: true } } }} />}
-          {vizMode === 'intensity' && (
-            <div className="two-col">
-              <div>
-                <Radar data={intensityData} options={{ plugins: { legend: { display: false } } }} />
-              </div>
-              <div>
-                <Bar data={intensityData} options={{ plugins: { legend: { display: false } } }} />
-              </div>
-            </div>
-          )}
+          {vizMode === 'distribution' && <HighchartsReact highcharts={Highcharts} options={distributionOptions} />}
+          {vizMode === 'timeline' && <HighchartsReact highcharts={Highcharts} options={timelineOptions} />}
+          {vizMode === 'intensity' && <HighchartsReact highcharts={Highcharts} options={intensityOptions} />}
         </div>
       </section>
 

@@ -53,7 +53,7 @@ function AppRoutes({
       <Route path="/runs" element={<RunsPage runs={runs} filters={filters} setFilters={setFilters} searchRuns={searchRuns} />} />
       <Route path="/runs/:id" element={<RunDetailLoader cache={runDetail} lineCache={timeline} setCache={setRunDetail} setLineCache={setTimeline} />} />
       <Route path="/rules" element={canTuneRules ? <RuleSettingsPage rules={rules} onSave={saveRules} canEdit={canTuneRules} /> : <Navigate to="/" />} />
-      <Route path="/admin" element={user.role === 'admin' ? <AdminPage users={users} {...adminActions} /> : <Navigate to="/" />} />
+      <Route path="/admin" element={user.role === 'admin' ? <AdminPage currentUser={user} users={users} {...adminActions} /> : <Navigate to="/" />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )

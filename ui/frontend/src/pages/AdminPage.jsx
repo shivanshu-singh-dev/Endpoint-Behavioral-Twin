@@ -1,8 +1,12 @@
 import { useState } from 'react'
+import { api } from '../services/api'
 
-export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup }) {
+export default function AdminPage({ currentUser, users, onCreateUser, onDeleteUser, onCleanup }) {
   const [form, setForm] = useState({ username: '', password: '', role: 'guest' })
   const [message, setMessage] = useState('')
+  const [showCleanupModal, setShowCleanupModal] = useState(false)
+  const [cleanupPassword, setCleanupPassword] = useState('')
+  const [cleanupError, setCleanupError] = useState('')
 
   const createUser = async () => {
     const payload = {
@@ -38,13 +42,27 @@ export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup
     }
   }
 
-  const cleanup = async () => {
+  const confirmCleanup = async () => {
+    setCleanupError('')
+    if (!cleanupPassword) {
+      setCleanupError('Password is required.')
+      return
+    }
+
     try {
+      await api.login({ username: currentUser.username, password: cleanupPassword })
+      // Verification successful, proceed to clean
       await onCleanup()
       setMessage('Logs cleaned successfully.')
+      setShowCleanupModal(false)
+      setCleanupPassword('')
     } catch (error) {
-      setMessage(error.message || 'Failed to clean logs.')
+      setCleanupError('Incorrect password.')
     }
+  }
+
+  const cleanup = () => {
+      setShowCleanupModal(true)
   }
 
   return (
@@ -91,6 +109,30 @@ export default function AdminPage({ users, onCreateUser, onDeleteUser, onCleanup
           <button className="danger-btn" onClick={cleanup}>⚠ Clean Logs</button>
         </div>
       </div>
+
+      {showCleanupModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>⚠ Confirm Log Cleanup</h3>
+            <p className="muted">This action is destructive. Please enter your password to proceed.</p>
+            <input 
+              type="password" 
+              placeholder="Your password" 
+              value={cleanupPassword}
+              onChange={(e) => setCleanupPassword(e.target.value)}
+            />
+            {cleanupError && <p className="error-text">{cleanupError}</p>}
+            <div className="modal-actions">
+              <button className="ghost-btn" onClick={() => {
+                setShowCleanupModal(false)
+                setCleanupError('')
+                setCleanupPassword('')
+              }}>Cancel</button>
+              <button className="danger-btn" onClick={confirmCleanup}>Confirm Clean Logs</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

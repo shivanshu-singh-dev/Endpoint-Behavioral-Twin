@@ -1,17 +1,21 @@
-import { Bar, Doughnut, Line } from 'react-chartjs-2'
-import {
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Tooltip,
-} from 'chart.js'
+import Highcharts from 'highcharts'
+import HighchartsReact from 'highcharts-react-official'
+import highcharts3d from 'highcharts/highcharts-3d'
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement)
+if (typeof highcharts3d === 'function' && !Highcharts.is3dEnabled) {
+  highcharts3d(Highcharts)
+  Highcharts.is3dEnabled = true
+}
+
+// Global Highcharts theme
+Highcharts.setOptions({
+  chart: { backgroundColor: 'transparent', style: { fontFamily: 'inherit' } },
+  title: { text: null },
+  credits: { enabled: false },
+  legend: { itemStyle: { color: '#94a3b8' } },
+  xAxis: { labels: { style: { color: '#94a3b8' } } },
+  yAxis: { labels: { style: { color: '#94a3b8' } }, title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)' }
+})
 
 function verdictCount(data, keyword) {
   return data.verdict_distribution
@@ -24,36 +28,60 @@ export default function DashboardPage({ data }) {
   const mediumRisk = verdictCount(data, 'suspicious') + verdictCount(data, 'medium')
   const lowRisk = Math.max(data.total_runs - highRisk - mediumRisk, 0)
 
-  const verdictChartData = {
-    labels: data.verdict_distribution.map((v) => v.verdict),
-    datasets: [{
-      data: data.verdict_distribution.map((v) => v.count),
-      backgroundColor: ['#ef4444', '#f59e0b', '#2563eb', '#10b981', '#94a3b8'],
-      borderWidth: 0,
-    }],
+  const verdictOptions = {
+    chart: { type: 'pie', options3d: { enabled: true, alpha: 45 } },
+    plotOptions: {
+      pie: {
+        innerSize: '40%',
+        depth: 45,
+        dataLabels: { enabled: false },
+        showInLegend: true,
+        colors: ['#ef4444', '#f59e0b', '#2563eb', '#10b981', '#94a3b8']
+      }
+    },
+    series: [{
+      name: 'Runs',
+      data: data.verdict_distribution.map((v) => ({ name: v.verdict, y: v.count }))
+    }]
   }
 
-  const riskDistributionData = {
-    labels: ['Low', 'Medium', 'High'],
-    datasets: [{
-      label: 'Runs',
-      data: [lowRisk, mediumRisk, highRisk],
-      backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-      borderRadius: 8,
-    }],
+  const riskOptions = {
+    chart: { type: 'column', options3d: { enabled: true, alpha: 15, beta: 15, depth: 50, viewDistance: 25 } },
+    plotOptions: {
+      column: {
+        depth: 25,
+        colors: ['#10b981', '#f59e0b', '#ef4444'],
+        colorByPoint: true
+      }
+    },
+    xAxis: { categories: ['Low', 'Medium', 'High'] },
+    series: [{
+      name: 'Runs',
+      data: [lowRisk, mediumRisk, highRisk]
+    }]
   }
 
-  const activityLineData = {
-    labels: data.recent_runs.map((run) => new Date(run.start_time).toLocaleTimeString()),
-    datasets: [{
-      label: 'Risk Score',
-      data: data.recent_runs.map((run) => run.risk_score ?? 0),
-      fill: true,
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37, 99, 235, 0.14)',
-      tension: 0.32,
-      pointRadius: 3,
-    }],
+  const activityOptions = {
+    chart: { type: 'area', zooming: { type: 'x' } },
+    xAxis: { categories: data.recent_runs.map((run) => new Date(run.start_time).toLocaleTimeString()) },
+    plotOptions: {
+      area: {
+        fillColor: {
+          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+          stops: [
+            [0, 'rgba(37, 99, 235, 0.4)'],
+            [1, 'rgba(37, 99, 235, 0.05)']
+          ]
+        },
+        lineColor: '#2563eb',
+        lineWidth: 2,
+        marker: { radius: 3 }
+      }
+    },
+    series: [{
+      name: 'Risk Score',
+      data: data.recent_runs.map((run) => run.risk_score ?? 0)
+    }]
   }
 
   return (
@@ -85,15 +113,15 @@ export default function DashboardPage({ data }) {
       <section className="three-col">
         <div className="card hover-lift">
           <h3>Verdict Distribution</h3>
-          <Doughnut data={verdictChartData} />
+          <HighchartsReact highcharts={Highcharts} options={verdictOptions} />
         </div>
         <div className="card hover-lift">
           <h3>Risk Score Distribution</h3>
-          <Bar data={riskDistributionData} options={{ plugins: { legend: { display: false } } }} />
+          <HighchartsReact highcharts={Highcharts} options={riskOptions} />
         </div>
         <div className="card hover-lift">
           <h3>Recent Activity Timeline</h3>
-          <Line data={activityLineData} options={{ plugins: { legend: { display: false } } }} />
+          <HighchartsReact highcharts={Highcharts} options={activityOptions} />
         </div>
       </section>
 
