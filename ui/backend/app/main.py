@@ -115,7 +115,7 @@ def list_runs(
     remote_ip: str | None = None,
     remote_port: int | None = Query(default=None, ge=1, le=65535),
     process_name: str | None = None,
-    date_range: str | None = Query(default=None, pattern="^(24h|7d|30d)$"),
+    date_range: str | None = Query(default=None, pattern="^(5m|1h|6h|24h|7d|30d)$"),
 ):
     filters = build_run_filters(
         run_id=run_id,

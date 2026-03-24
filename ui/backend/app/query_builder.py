@@ -55,7 +55,13 @@ def build_run_filters(
     if date_range:
         now = datetime.utcnow()
         lower_bound = None
-        if date_range == "24h":
+        if date_range == "5m":
+            lower_bound = now - timedelta(minutes=5)
+        elif date_range == "1h":
+            lower_bound = now - timedelta(hours=1)
+        elif date_range == "6h":
+            lower_bound = now - timedelta(hours=6)
+        elif date_range == "24h":
             lower_bound = now - timedelta(hours=24)
         elif date_range == "7d":
             lower_bound = now - timedelta(days=7)
