@@ -627,13 +627,36 @@ progress.success::-webkit-progress-value {
   margin-top: 1rem;
 }
 
+.tree-node-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
 .tree-node {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.3rem 0;
+  padding: 0.15rem 0;
   font-family: monospace;
   font-size: 0.85rem;
+}
+
+.tree-line {
+  white-space: pre;
+  color: var(--border-focus);
+  opacity: 0.6;
+}
+
+.tree-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-right: 0.6rem;
+}
+
+.node-name {
+  margin-right: 0.6rem;
+  font-weight: 500;
 }
 
 .tree-node small {

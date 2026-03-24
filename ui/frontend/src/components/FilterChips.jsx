@@ -39,9 +39,11 @@ export default function FilterChips({ filters, onChange, onSearch }) {
       </div>
 
       <div className="quick-row">
-        <button className="ghost-btn" onClick={() => onSearch({ verdict: 'high', min_score: '60', date_range: '7d' })}>High Risk</button>
-        <button className="ghost-btn" onClick={() => onSearch({ verdict: 'suspicious', date_range: '24h' })}>Suspicious</button>
-        <button className="ghost-btn" onClick={() => onSearch({})}>Clear</button>
+        <button className="ghost-btn" onClick={() => onSearch({ min_score: '80', date_range: '30d' })}>Critical Risk</button>
+        <button className="ghost-btn" onClick={() => onSearch({ min_score: '50', date_range: '7d' })}>Suspicious</button>
+        <button className="ghost-btn" onClick={() => onSearch({ date_range: '24h' })}>Last 24h</button>
+        <button className="ghost-btn" onClick={() => onSearch({ min_score: '70' })}>All High Risk</button>
+        <button className="ghost-btn" onClick={() => onSearch({})}>Clear Filters</button>
         <button className="primary-btn" onClick={() => onSearch()}>Apply Filters</button>
       </div>
     </div>

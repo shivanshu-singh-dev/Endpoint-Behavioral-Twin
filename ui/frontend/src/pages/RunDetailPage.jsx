@@ -22,15 +22,35 @@ const vizModes = [
   { id: 'intensity', label: 'Behavior Heatmap' },
 ]
 
-function renderTreeNode(node, depth = 0) {
+function renderTreeNode(node, depth = 0, isLast = true, path = []) {
   return (
-    <div key={`${node.pid}-${depth}`} className="tree-node" style={{ marginLeft: depth * 18 }}>
-      <span className="tree-dot" />
-      <span>{node.name}</span>
-      <small>PID {node.pid}</small>
-      {node.children?.map((child) => renderTreeNode(child, depth + 1))}
+    <div key={`${node.pid}-${depth}`} className="tree-node-wrapper">
+      <div className="tree-node">
+        {path.map((isParentLast, i) => (
+          <span key={i} className="tree-line">{isParentLast ? '    ' : '│   '}</span>
+        ))}
+        {depth > 0 && <span className="tree-line">{isLast ? '└── ' : '├── '}</span>}
+        <span className="tree-dot" />
+        <span className="node-name">{node.name}</span>
+        <small>PID {node.pid}</small>
+      </div>
+      {node.children?.map((child, idx) => 
+        renderTreeNode(child, depth + 1, idx === node.children?.length - 1, [...path, depth === 0 ? true : isLast])
+      )}
     </div>
   )
+}
+
+function formatEventDetail(cat, det) {
+  if (!det) return ''
+  switch(cat) {
+    case 'file': return `${det.event_type} ${det.dest_path || det.src_path || ''}`
+    case 'process': return `${det.process_name || ''} (PID: ${det.pid})`
+    case 'network': return `${det.remote_ip || 'unknown'}:${det.remote_port || '0'}`
+    case 'persistence': return det.mechanism_type
+    case 'config': return det.config_type
+    default: return ''
+  }
 }
 
 function verdictClass(verdict) {
@@ -201,13 +221,21 @@ export default function RunDetailPage({ detail, timeline }) {
         <div className="card hover-lift stagger-item">
           <h3>Behavior Timeline</h3>
           <ul className="timeline-list">
-            {timeline.map((t) => (
-              <li key={t.event_id}>
-                <span>{t.offset_seconds.toFixed(1)}s</span>
-                <span className="timeline-point" />
-                <span>{t.category}</span>
-              </li>
-            ))}
+            {timeline.map((t) => {
+              const fullEvent = detail.events.find(e => e.event_id === t.event_id)
+              const extraDetail = formatEventDetail(t.category, fullEvent?.detail)
+              
+              return (
+                <li key={t.event_id}>
+                  <span>{t.offset_seconds.toFixed(1)}s</span>
+                  <span className="timeline-point" />
+                  <span>
+                    <strong>{t.category}</strong>
+                    {extraDetail && <span className="muted" style={{ marginLeft: '8px', fontSize: '0.8rem' }}>{extraDetail}</span>}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </div>
         <div className="card hover-lift stagger-item">
