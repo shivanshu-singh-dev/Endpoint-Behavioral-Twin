@@ -73,6 +73,18 @@ def start_monitors(run_id):
     )
     monitors.append(net_mon)
 
+    persistence_mon = subprocess.Popen(
+        [PYTHON_BIN, "monitors/persistence_monitor.py"],
+        env=env
+    )
+    monitors.append(persistence_mon)
+
+    config_mon = subprocess.Popen(
+        [PYTHON_BIN, "monitors/config_monitor.py"],
+        env=env
+    )
+    monitors.append(config_mon)
+
     time.sleep(0.5)
 
     for monitor in monitors:

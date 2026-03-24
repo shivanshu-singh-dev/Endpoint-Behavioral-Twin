@@ -20,6 +20,49 @@ def analyze(summary):
         score += 20
         reasons.append(f"Automated file activity ({ops_per_sec:.1f} ops/sec)")
 
+    network = summary["network"]
+    process = summary["process"]
+
+    if network.get("total_connections", 0) >= 10:
+        score += 20
+        reasons.append("High volume outbound network activity")
+    elif network.get("total_connections", 0) >= 3:
+        score += 10
+        reasons.append("Repeated outbound network activity")
+
+    if network.get("unique_ips", 0) >= 5:
+        score += 10
+        reasons.append("Connections to many unique remote IPs")
+
+    uncommon_ports = [
+        port for port in network.get("ports_used", [])
+        if port not in (53, 80, 443)
+    ]
+    if uncommon_ports:
+        score += 10
+        reasons.append(f"Uncommon remote ports used: {sorted(set(uncommon_ports))}")
+
+    if process.get("child_count", 0) >= 30:
+        score += 20
+        reasons.append("Large child process burst detected")
+    elif process.get("child_count", 0) >= 10:
+        score += 10
+        reasons.append("Elevated child process creation detected")
+
+    if process.get("max_depth", 0) >= 10:
+        score += 10
+        reasons.append("Deep process fan-out pattern detected")
+
+    if summary.get("persistence", {}).get("total_events", 0) > 0:
+        score += 35
+        reasons.append("Persistence behavior observed")
+
+    if summary.get("config", {}).get("total_events", 0) > 0:
+        score += 5
+        reasons.append("Configuration changes observed")
+
+    score = min(score, 100)
+
     if score >= 70:
         verdict = "High Risk"
         confidence = "High"
@@ -46,7 +89,9 @@ def get_file_summary(run_id):
         "total_events": 0,
         "duration_seconds": 0,
         "network": {},
-        "process": {}
+        "process": {},
+        "persistence": {"total_events": 0, "mechanisms": []},
+        "config": {"total_events": 0, "types": []}
     }
 
     with db_cursor() as (_, cursor):
@@ -72,69 +117,6 @@ def get_file_summary(run_id):
         cursor.execute(
             """
             SELECT fe.event_type, COUNT(*) AS count
-            FROM file_event fe
-            JOIN event e ON fe.event_id = e.event_id
-            WHERE e.run_id = %s
-            GROUP BY fe.event_type
-            """,
-            (run_id,)
-        )
-        for row in cursor.fetchall():
-            summary[row["event_type"]] = row["count"]
-
-        cursor.execute(
-            """
-            SELECT COUNT(*) AS total_connections,
-                   COUNT(DISTINCT ne.remote_ip) AS unique_ips
-            FROM network_event ne
-            JOIN event e ON ne.event_id = e.event_id
-            WHERE e.run_id = %s
-            """,
-            (run_id,)
-        )
-        net_row = cursor.fetchone() or {}
-        max_conn = 0
-        cursor.execute(
-            """
-            SELECT MAX(cnt) AS max_conn
-            FROM (
-                SELECT COUNT(*) AS cnt
-                FROM network_event ne
-                JOIN event e ON ne.event_id = e.event_id
-                WHERE e.run_id = %s
-                GROUP BY ne.remote_ip
-            ) AS ip_counts
-            """,
-            (run_id,)
-        )
-        max_row = cursor.fetchone()
-        if max_row and max_row["max_conn"]:
-            max_conn = max_row["max_conn"]
-
-        cursor.execute(
-            """
-            SELECT DISTINCT ne.remote_port
-            FROM network_event ne
-            JOIN event e ON ne.event_id = e.event_id
-            WHERE e.run_id = %s
-            ORDER BY ne.remote_port
-            """,
-            (run_id,)
-        )
-        ports = [row["remote_port"] for row in cursor.fetchall()]
-
-        summary["network"] = {
-            "total_connections": net_row.get("total_connections", 0) or 0,
-            "unique_ips": net_row.get("unique_ips", 0) or 0,
-            "max_conn_to_single_ip": max_conn or 0,
-            "ports_used": ports
-        }
-
-        cursor.execute(
-            """
-            SELECT COUNT(DISTINCT pe.pid) AS child_count
-            FROM process_event pe
-            JOIN event e ON pe.event_id = e.event_id
             WHERE e.run_id = %s
             """,
             (run_id,)
@@ -158,6 +140,61 @@ def get_file_summary(run_id):
         summary["process"] = {
             "child_count": proc_row.get("child_count", 0) or 0,
             "max_depth": depth_row.get("max_depth", 0) or 0
+        }
+
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total_events
+            FROM persistence_event pe
+            JOIN event e ON pe.event_id = e.event_id
+            WHERE e.run_id = %s
+            """,
+            (run_id,)
+        )
+        persistence_total = cursor.fetchone() or {}
+
+        cursor.execute(
+            """
+            SELECT DISTINCT pe.mechanism_type
+            FROM persistence_event pe
+            JOIN event e ON pe.event_id = e.event_id
+            WHERE e.run_id = %s
+            ORDER BY pe.mechanism_type
+            """,
+            (run_id,)
+        )
+        persistence_mechanisms = [row["mechanism_type"] for row in cursor.fetchall()]
+        summary["persistence"] = {
+            "total_events": persistence_total.get("total_events", 0) or 0,
+            "mechanisms": persistence_mechanisms
+        }
+
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total_events
+            FROM config_event ce
+            JOIN event e ON ce.event_id = e.event_id
+            WHERE e.run_id = %s
+            """,
+            (run_id,)
+        )
+        config_total = cursor.fetchone() or {}
+
+        cursor.execute(
+            """
+            SELECT DISTINCT ce.config_type
+            FROM config_event ce
+            JOIN event e ON ce.event_id = e.event_id
+            WHERE e.run_id = %s
+            ORDER BY ce.config_type
+            """,
+            (run_id,)
+        )
+        config_types = [row["config_type"] for row in cursor.fetchall()]
+
+        summary["config"] = {
+            "total_events": config_total.get("total_events", 0) or 0,
+            "types": config_types
         }
 
     return summary
@@ -185,29 +222,3 @@ def store_analysis(run_id, analysis):
             "DELETE FROM analysis_reason WHERE run_id = %s",
             (run_id,)
         )
-        for reason in analysis["reasons"]:
-            cursor.execute(
-                """
-                INSERT INTO analysis_reason (run_id, reason_text)
-                VALUES (%s, %s)
-                """,
-                (run_id, reason)
-            )
-        conn.commit()
-
-
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python3 file_analyzer.py <run_id>")
-        sys.exit(1)
-
-    run_id = int(sys.argv[1])
-    summary = get_file_summary(run_id)
-    result = analyze(summary)
-    store_analysis(run_id, result)
-
-    print(f"[agent] Updated analysis for run_id={run_id}")
-
-
-if __name__ == "__main__":
-    main()
