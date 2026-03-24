@@ -106,6 +106,8 @@ def dashboard(_: Annotated[dict, Depends(require_role([Role.ADMIN, Role.RESEARCH
 @app.get("/api/runs", response_model=list[RunSummary])
 def list_runs(
     _: Annotated[dict, Depends(require_role([Role.ADMIN, Role.RESEARCHER, Role.GUEST]))],
+    run_id: int | None = None,
+    event_type: str | None = None,
     filename: str | None = None,
     verdict: str | None = None,
     min_score: int | None = Query(default=None, ge=0, le=100),
@@ -116,6 +118,8 @@ def list_runs(
     date_range: str | None = Query(default=None, pattern="^(24h|7d|30d)$"),
 ):
     filters = build_run_filters(
+        run_id=run_id,
+        event_type=event_type,
         filename=filename,
         verdict=verdict,
         min_score=min_score,
@@ -209,12 +213,20 @@ def run_detail(
                     "detail": detail,
                 })
 
+    try:
+        if RULE_SETTINGS_PATH.exists():
+            rules_data = json.loads(RULE_SETTINGS_PATH.read_text())
+        else:
+            rules_data = {}
+    except:
+        rules_data = {}
+
     total_weight = {
-        "file": 5,
-        "process": 7,
-        "network": 10,
-        "persistence": 12,
-        "config": 4,
+        "file": rules_data.get("file_weight", 5),
+        "process": rules_data.get("process_weight", 7),
+        "network": rules_data.get("network_weight", 10),
+        "persistence": rules_data.get("persistence_weight", 12),
+        "config": rules_data.get("config_weight", 4),
     }
     risk_breakdown = [
         {
@@ -312,6 +324,12 @@ def update_rule_settings(
     _: Annotated[dict, Depends(require_role([Role.ADMIN, Role.RESEARCHER]))],
 ):
     RULE_SETTINGS_PATH.write_text(payload.model_dump_json(indent=2))
+    
+    # Trigger re-analysis for all runs
+    import subprocess
+    analyzer_script = Path(__file__).resolve().parent.parent.parent.parent / "collectors" / "file_analyzer.py"
+    subprocess.Popen(["python3", str(analyzer_script), "--reanalyze-all"])
+
     return payload
 
 

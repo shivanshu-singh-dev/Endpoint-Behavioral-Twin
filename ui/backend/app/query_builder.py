@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 
 def build_run_filters(
+    run_id: int | None,
+    event_type: str | None,
     filename: str | None,
     verdict: str | None,
     min_score: int | None,
@@ -15,6 +17,13 @@ def build_run_filters(
     params: list[object] = []
     joins: list[str] = ["LEFT JOIN file_analysis a ON r.run_id = a.run_id"]
 
+    if run_id is not None:
+        where_clauses.append("r.run_id = %s")
+        params.append(run_id)
+    if event_type:
+        joins.append("JOIN event e_type ON r.run_id = e_type.run_id")
+        where_clauses.append("e_type.category = %s")
+        params.append(event_type)
     if filename:
         where_clauses.append("r.filename LIKE %s")
         params.append(f"%{filename}%")

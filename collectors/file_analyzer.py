@@ -7,6 +7,16 @@ from db import db_cursor
 
 
 def analyze(summary):
+    import json
+    from pathlib import Path
+    settings_path = Path(__file__).resolve().parent.parent / "ui" / "backend" / "state" / "rule_settings.json"
+    rules = {"file_weight": 5, "process_weight": 7, "network_weight": 10, "persistence_weight": 12, "config_weight": 4}
+    if settings_path.exists():
+        try:
+            rules.update(json.loads(settings_path.read_text()))
+        except:
+            pass
+
     score = 0
     reasons = []
 
@@ -15,25 +25,28 @@ def analyze(summary):
     ops_per_sec = total / duration
 
     if ops_per_sec >= 25:
-        score += 35
+        score += rules["file_weight"] * 7
         reasons.append(f"Extreme automation rate ({ops_per_sec:.1f} ops/sec)")
     elif ops_per_sec >= 10:
-        score += 20
+        score += rules["file_weight"] * 4
         reasons.append(f"Automated file activity ({ops_per_sec:.1f} ops/sec)")
 
     network = summary["network"]
     process = summary["process"]
 
     if network.get("total_connections", 0) >= 10:
-        score += 20
+        score += rules["network_weight"] * 2
 
     if summary.get("persistence", {}).get("total_events", 0) > 0:
-        score += 35
+        score += rules["persistence_weight"] * 3
         reasons.append("Persistence behavior observed")
 
     if summary.get("config", {}).get("total_events", 0) > 0:
-        score += 5
+        score += rules["config_weight"] * 2
         reasons.append("Configuration changes observed")
+
+    if process.get("child_count", 0) > 15:
+        score += rules["process_weight"] * 3
 
     score = min(score, 100)
 
@@ -260,8 +273,18 @@ def run_analysis(run_id):
 
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "--reanalyze-all":
+        with db_cursor() as (_, cursor):
+            cursor.execute("SELECT run_id FROM run_index")
+            runs = [r["run_id"] for r in cursor.fetchall()]
+        print(f"Reanalyzing {len(runs)} runs...")
+        for run_id in runs:
+            run_analysis(run_id)
+        print("Done.")
+        return
+
     if len(sys.argv) != 2:
-        print("Usage: python collectors/file_analyzer.py <run_id>")
+        print("Usage: python collectors/file_analyzer.py <run_id> OR --reanalyze-all")
         raise SystemExit(1)
 
     run_id = int(sys.argv[1])

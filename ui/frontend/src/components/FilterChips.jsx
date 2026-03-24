@@ -1,4 +1,6 @@
 const filterLabels = {
+  run_id: 'Run ID',
+  event_type: 'Event Type',
   filename: 'Filename',
   verdict: 'Verdict',
   min_score: 'Min Score',
@@ -16,6 +18,17 @@ export default function FilterChips({ filters, onChange, onSearch }) {
     <div className="card hover-lift">
       <h3>SOC Filters</h3>
       <div className="chip-grid">
+        <label>Run ID <input type="number" value={filters.run_id || ''} onChange={(e) => update('run_id', e.target.value)} /></label>
+        <label>Event Type
+          <select value={filters.event_type || ''} onChange={(e) => update('event_type', e.target.value)}>
+            <option value="">Any</option>
+            <option value="file">File</option>
+            <option value="process">Process</option>
+            <option value="network">Network</option>
+            <option value="persistence">Persistence</option>
+            <option value="config">Config</option>
+          </select>
+        </label>
         <label>Filename <input value={filters.filename || ''} onChange={(e) => update('filename', e.target.value)} /></label>
         <label>Verdict <input value={filters.verdict || ''} onChange={(e) => update('verdict', e.target.value)} /></label>
         <label>Min Score <input type="number" value={filters.min_score || ''} onChange={(e) => update('min_score', e.target.value)} /></label>
