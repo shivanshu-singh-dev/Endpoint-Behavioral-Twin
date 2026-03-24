@@ -113,9 +113,11 @@ export default function App() {
     navigate('/login')
   }
 
-  const searchRuns = async () => {
-    const sanitized = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined))
+  const searchRuns = async (overrideFilters) => {
+    const activeFilters = overrideFilters || filters
+    const sanitized = Object.fromEntries(Object.entries(activeFilters).filter(([, v]) => v !== '' && v !== undefined))
     setRuns(await api.runs(sanitized))
+    if (overrideFilters) setFilters(overrideFilters)
   }
 
   const adminActions = {
