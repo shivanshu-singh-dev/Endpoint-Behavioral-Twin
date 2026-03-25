@@ -12,13 +12,13 @@ from pathlib import Path
 from db import db_cursor
 from utils.time_utils import now_ist
 
-TEST_FOLDER = "/home/lab/Test Folder"
+InputFolder = os.environ.get("INPUT_FOLDER", "/home/lab/Test Folder")
 
 ATTACK_USER = "lab"
 PYTHON_BIN = "/usr/bin/python3"
 
 ANALYZER = "collectors/file_analyzer.py"
-TARGET_SITE_DIR = Path("/home/lab/lab_docs")
+TargetPath = Path(os.environ.get("TARGET_PATH", "/home/lab/lab_docs"))
 
 
 def snapshot_target_directory(target_dir):
@@ -185,8 +185,8 @@ def main():
 
         while True:
             files = [
-                f for f in os.listdir(TEST_FOLDER)
-                if os.path.isfile(os.path.join(TEST_FOLDER, f))
+                f for f in os.listdir(InputFolder)
+                if os.path.isfile(os.path.join(InputFolder, f))
             ]
 
             for f in files:
@@ -194,12 +194,12 @@ def main():
                     continue
 
                 seen.add(f)
-                filepath = os.path.join(TEST_FOLDER, f)
+                filepath = os.path.join(InputFolder, f)
 
                 print(f"[agent] New file detected: {f}")
 
                 run_id = record_start_time(f)
-                snapshot_path = snapshot_target_directory(TARGET_SITE_DIR)
+                snapshot_path = snapshot_target_directory(TargetPath)
                 monitors = start_monitors(run_id)
 
                 try:
@@ -209,7 +209,7 @@ def main():
                 finally:
                     stop_monitors(monitors)
                     monitors = []
-                    restore_target_directory(TARGET_SITE_DIR, snapshot_path)
+                    restore_target_directory(TargetPath, snapshot_path)
 
                 print(f"[agent] Analysis complete for {f}")
                 return

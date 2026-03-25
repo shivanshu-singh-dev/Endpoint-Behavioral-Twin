@@ -30,12 +30,14 @@ export default function DashboardPage({ data }) {
 
   const verdictOptions = {
     chart: { type: 'pie', options3d: { enabled: true, alpha: 45 } },
+    tooltip: { pointFormat: '{series.name}: <b>{point.y}</b>' },
     plotOptions: {
       pie: {
         innerSize: '40%',
         depth: 45,
-        dataLabels: { enabled: false },
+        dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
         showInLegend: true,
+        cursor: 'pointer',
         colors: ['#ef4444', '#f59e0b', '#2563eb', '#10b981', '#94a3b8']
       }
     },
@@ -47,11 +49,14 @@ export default function DashboardPage({ data }) {
 
   const riskOptions = {
     chart: { type: 'column', options3d: { enabled: true, alpha: 15, beta: 15, depth: 50, viewDistance: 25 } },
+    tooltip: { pointFormat: '{series.name}: <b>{point.y}</b>' },
     plotOptions: {
       column: {
         depth: 25,
         colors: ['#10b981', '#f59e0b', '#ef4444'],
-        colorByPoint: true
+        colorByPoint: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: true }
       }
     },
     xAxis: { categories: ['Unlikely', 'Medium Risk', 'High Risk'] },
@@ -63,6 +68,7 @@ export default function DashboardPage({ data }) {
 
   const activityOptions = {
     chart: { type: 'area', zooming: { type: 'x' } },
+    tooltip: { shared: true },
     xAxis: { categories: data.recent_runs.map((run) => new Date(run.start_time).toLocaleTimeString()) },
     plotOptions: {
       area: {
@@ -75,7 +81,8 @@ export default function DashboardPage({ data }) {
         },
         lineColor: '#2563eb',
         lineWidth: 2,
-        marker: { radius: 3 }
+        marker: { radius: 3 },
+        cursor: 'pointer'
       }
     },
     series: [{

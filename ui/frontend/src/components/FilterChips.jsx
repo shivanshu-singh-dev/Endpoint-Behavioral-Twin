@@ -8,7 +8,7 @@ const filterLabels = {
   remote_ip: 'Remote IP',
   remote_port: 'Remote Port',
   process_name: 'Process Name',
-  date_range: 'Date Range',
+  time_range: 'Time Range',
 }
 
 export default function FilterChips({ filters, onChange, onSearch }) {
@@ -44,8 +44,8 @@ export default function FilterChips({ filters, onChange, onSearch }) {
         <label>Remote IP <input value={filters.remote_ip || ''} onChange={(e) => update('remote_ip', e.target.value)} /></label>
         <label>Remote Port <input type="number" value={filters.remote_port || ''} onChange={(e) => update('remote_port', e.target.value)} /></label>
         <label>Process Name <input value={filters.process_name || ''} onChange={(e) => update('process_name', e.target.value)} /></label>
-        <label>Date Range
-          <select value={filters.date_range || ''} onChange={(e) => update('date_range', e.target.value)}>
+        <label>Time Range
+          <select value={filters.time_range || ''} onChange={(e) => update('time_range', e.target.value)}>
             <option value="">Any</option>
             <option value="5m">Last 5 mins</option>
             <option value="1h">Last 1 hour</option>
@@ -64,9 +64,9 @@ export default function FilterChips({ filters, onChange, onSearch }) {
       </div>
 
       <div className="quick-row">
-        <button className="ghost-btn" onClick={() => onSearch({ min_score: '70', date_range: '30d' })}>Critical Risk</button>
-        <button className="ghost-btn" onClick={() => onSearch({ min_score: '40', max_score: '69', date_range: '7d' })}>Medium Risk</button>
-        <button className="ghost-btn" onClick={() => onSearch({ date_range: '24h' })}>Last 24h</button>
+        <button className="ghost-btn" onClick={() => onSearch({ min_score: '70', time_range: '30d' })}>Critical Risk</button>
+        <button className="ghost-btn" onClick={() => onSearch({ min_score: '40', max_score: '69', time_range: '7d' })}>Medium Risk</button>
+        <button className="ghost-btn" onClick={() => onSearch({ time_range: '24h' })}>Last 24h</button>
         <button className="ghost-btn" onClick={() => onSearch({ min_score: '70' })}>All High Risk</button>
         <button className="ghost-btn" onClick={() => onSearch({})}>Clear Filters</button>
         <button className="primary-btn" onClick={() => onSearch()}>Apply Filters</button>

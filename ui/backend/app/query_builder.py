@@ -11,7 +11,7 @@ def build_run_filters(
     remote_ip: str | None,
     remote_port: int | None,
     process_name: str | None,
-    date_range: str | None,
+    time_range: str | None,
 ):
     where_clauses: list[str] = []
     params: list[object] = []
@@ -52,20 +52,20 @@ def build_run_filters(
         joins.append("JOIN process_event p ON e_proc.event_id = p.event_id")
         where_clauses.append("p.process_name LIKE %s")
         params.append(f"%{process_name}%")
-    if date_range:
-        now = datetime.utcnow()
+    if time_range:
+        now = datetime.utcnow() + timedelta(hours=5, minutes=30)
         lower_bound = None
-        if date_range == "5m":
+        if time_range == "5m":
             lower_bound = now - timedelta(minutes=5)
-        elif date_range == "1h":
+        elif time_range == "1h":
             lower_bound = now - timedelta(hours=1)
-        elif date_range == "6h":
+        elif time_range == "6h":
             lower_bound = now - timedelta(hours=6)
-        elif date_range == "24h":
+        elif time_range == "24h":
             lower_bound = now - timedelta(hours=24)
-        elif date_range == "7d":
+        elif time_range == "7d":
             lower_bound = now - timedelta(days=7)
-        elif date_range == "30d":
+        elif time_range == "30d":
             lower_bound = now - timedelta(days=30)
 
         if lower_bound:
