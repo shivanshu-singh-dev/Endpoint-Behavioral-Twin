@@ -14,7 +14,7 @@ function Protected({ user, children }) {
   return children
 }
 
-function RunDetailLoader({ cache, lineCache, setCache, setLineCache }) {
+function RunDetailLoader({ user, cache, lineCache, setCache, setLineCache }) {
   const { id } = useParams()
   const runId = Number(id)
 
@@ -27,7 +27,7 @@ function RunDetailLoader({ cache, lineCache, setCache, setLineCache }) {
   }, [runId, cache, setCache, setLineCache])
 
   if (!cache[runId]) return <p>Loading run…</p>
-  return <RunDetailPage detail={cache[runId]} timeline={lineCache[runId] || []} />
+  return <RunDetailPage user={user} detail={cache[runId]} timeline={lineCache[runId] || []} />
 }
 
 function AppRoutes({
@@ -51,7 +51,7 @@ function AppRoutes({
     <Routes>
       <Route path="/" element={<DashboardPage data={dashboard} />} />
       <Route path="/runs" element={<RunsPage runs={runs} filters={filters} setFilters={setFilters} searchRuns={searchRuns} />} />
-      <Route path="/runs/:id" element={<RunDetailLoader cache={runDetail} lineCache={timeline} setCache={setRunDetail} setLineCache={setTimeline} />} />
+      <Route path="/runs/:id" element={<RunDetailLoader user={user} cache={runDetail} lineCache={timeline} setCache={setRunDetail} setLineCache={setTimeline} />} />
       <Route path="/rules" element={canTuneRules ? <RuleSettingsPage rules={rules} onSave={saveRules} canEdit={canTuneRules} /> : <Navigate to="/" />} />
       <Route path="/admin" element={user.role === 'admin' ? <AdminPage currentUser={user} users={users} {...adminActions} /> : <Navigate to="/" />} />
       <Route path="*" element={<Navigate to="/" />} />

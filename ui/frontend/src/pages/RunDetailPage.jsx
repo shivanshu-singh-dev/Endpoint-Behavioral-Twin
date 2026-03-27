@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import highcharts3d from 'highcharts/highcharts-3d'
+import { api } from '../services/api'
 
 if (typeof highcharts3d === 'function' && !Highcharts.is3dEnabled) {
   highcharts3d(Highcharts)
@@ -60,7 +61,16 @@ function verdictClass(verdict) {
   return 'verdict-badge low'
 }
 
-export default function RunDetailPage({ detail, timeline }) {
+export default function RunDetailPage({ user, detail, timeline }) {
+  const handleDownload = async (format) => {
+    try {
+      await api.exportRun(detail.run_id, format)
+    } catch (e) {
+      console.error("Export failed:", e)
+      alert("Failed to export report: " + e.message)
+    }
+  }
+
   const risk = detail.risk_score ?? 0
   const [vizMode, setVizMode] = useState('distribution')
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -150,9 +160,17 @@ export default function RunDetailPage({ detail, timeline }) {
 
   return (
     <div className="page fade-in">
-      <div className="title-row">
-        <h2>Run #{detail.run_id} · {detail.filename}</h2>
-        <span className={verdictClass(detail.verdict)}>{detail.verdict || 'Unknown'}</span>
+      <div className="title-row" style={{ alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h2>Run #{detail.run_id} · {detail.filename}</h2>
+          <span className={verdictClass(detail.verdict)}>{detail.verdict || 'Unknown'}</span>
+        </div>
+        {user && ['admin', 'researcher'].includes(user.role?.toLowerCase()) && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="ghost-btn" onClick={() => handleDownload('json')}>JSON Report</button>
+            <button className="primary-btn" onClick={() => handleDownload('csv')}>CSV ZIP Archive</button>
+          </div>
+        )}
       </div>
 
       <section className="stats-grid">

@@ -32,6 +32,22 @@ export const api = {
   runs: (params) => request(`/runs?${new URLSearchParams(params).toString()}`),
   runDetail: (runId) => request(`/runs/${runId}`),
   runTimeline: (runId) => request(`/runs/${runId}/timeline`),
+  exportRun: async (runId, format) => {
+    const token = localStorage.getItem('ebt_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+    const response = await fetch(`${API_BASE}/runs/${runId}/export?format=${format}`, { headers });
+    if (!response.ok) throw new Error('Export failed');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = format === 'json' ? `run_${runId}_export.json` : `run_${runId}_export.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
   getRules: () => request('/settings/rules'),
   saveRules: (payload) => request('/settings/rules', { method: 'PUT', body: JSON.stringify(payload) }),
   users: () => request('/admin/users'),

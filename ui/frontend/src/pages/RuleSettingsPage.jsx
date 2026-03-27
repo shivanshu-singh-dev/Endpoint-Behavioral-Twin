@@ -31,7 +31,7 @@ export default function RuleSettingsPage({ rules, onSave, canEdit = false }) {
       <div className="card hover-lift" style={{ marginBottom: "1.5rem" }}>
         <h3>Default Tuning Presets</h3>
         <div className="quick-row">
-          <button className="ghost-btn" onClick={() => setPreset({ file_weight: 4, process_weight: 5, network_weight: 8, persistence_weight: 12, config_weight: 2 })}>Ideal</button>
+          <button className="ghost-btn" onClick={() => setPreset({ file_weight: 4, process_weight: 5, network_weight: 5, persistence_weight: 12, config_weight: 2 })}>Ideal</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 7, network_weight: 10, persistence_weight: 12, config_weight: 4 })}>Default</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 5, network_weight: 5, persistence_weight: 20, config_weight: 5 })}>Persistence Focused</button>
           <button className="ghost-btn" onClick={() => setPreset({ file_weight: 5, process_weight: 5, network_weight: 5, persistence_weight: 5, config_weight: 20 })}>Config Focused</button>
