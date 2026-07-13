@@ -6,11 +6,11 @@
 
 ## 📖 Description
 
-Most malware analysis systems either detonate real malware in cloud environments or rely on opaque machine-learning decisions. Endpoint Behavioral Twin (EBT) takes a different approach by treating a local virtual machine as a **behavioral twin** of an endpoint.
+Many malware analysis systems either detonate real malware in cloud environments or rely on machine-learning classifiers. Endpoint Behavioral Twin (EBT) takes a different approach by treating a local virtual machine as a **behavioral twin** of an endpoint.
 
-EBT safely executes untrusted files inside an isolated, controlled sandbox. Multiple behavioral monitors simultaneously observe the execution, scoping all activity strictly to the execution window. The result is a transparent, explainable behavioral profile and risk verdict, explicitly built for learning, SOC demonstrations, and ethical simulations.
+EBT safely executes untrusted files inside an isolated, controlled sandbox. Multiple behavioral monitors simultaneously observe the execution, scoping all activity strictly to the execution window. The result is a transparent, rule-based behavioral profile and risk verdict, explicitly built for learning, SOC demonstrations, and ethical simulations.
 
-**Problem it solves:** Providing a clear, rule-based, and explainable alternative to signature-based detection and opaque ML models, functioning entirely offline and locally.
+**Problem it solves:** Provides a rule-based, explainable detection approach that runs entirely offline and locally. This is a different design philosophy from signature-based or ML-based detection, not a benchmarked replacement for either — EBT has not been evaluated against ML models on any labeled dataset.
 
 ---
 
