@@ -21,8 +21,12 @@ from .schemas import (
     TimelinePoint,
     TokenResponse,
     UserCreate,
+    UserCreate,
     UserView,
 )
+from fastapi import BackgroundTasks
+import pymysql
+import os
 from .security import (
     Role,
     create_access_token,
@@ -36,7 +40,7 @@ app = FastAPI(title="EBT UI API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -221,7 +225,7 @@ def run_detail(
             rules_data = json.loads(RULE_SETTINGS_PATH.read_text())
         else:
             rules_data = {}
-    except:
+    except Exception:
         rules_data = {}
 
     total_weight = {
@@ -432,14 +436,15 @@ def get_rule_settings(_: Annotated[dict, Depends(require_role([Role.ADMIN, Role.
 @app.put("/api/settings/rules", response_model=RuleSettings)
 def update_rule_settings(
     payload: RuleSettings,
+    background_tasks: BackgroundTasks,
     _: Annotated[dict, Depends(require_role([Role.ADMIN, Role.RESEARCHER]))],
 ):
     RULE_SETTINGS_PATH.write_text(payload.model_dump_json(indent=2))
     
-    # Trigger re-analysis for all runs
+    # Trigger re-analysis for all runs in background task
     import subprocess
     analyzer_script = Path(__file__).resolve().parent.parent.parent.parent / "collectors" / "file_analyzer.py"
-    subprocess.Popen(["python3", str(analyzer_script), "--reanalyze-all"])
+    background_tasks.add_task(subprocess.run, ["python3", str(analyzer_script), "--reanalyze-all"])
 
     return payload
 
@@ -461,13 +466,13 @@ def create_user(payload: UserCreate, _: Annotated[dict, Depends(require_role([Ro
 
     with ui_db() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
-            if cursor.fetchone():
+            try:
+                cursor.execute(
+                    "INSERT INTO users (username, password_hash, role, created_at) VALUES (%s, %s, %s, NOW())",
+                    (username, hash_password(payload.password), payload.role),
+                )
+            except pymysql.err.IntegrityError:
                 raise HTTPException(status_code=409, detail="Username already exists")
-            cursor.execute(
-                "INSERT INTO users (username, password_hash, role, created_at) VALUES (%s, %s, %s, NOW())",
-                (username, hash_password(payload.password), payload.role),
-            )
 
             user_id = cursor.lastrowid
             if not user_id:
@@ -503,23 +508,8 @@ def delete_user(user_id: int, _: Annotated[dict, Depends(require_role([Role.ADMI
 def cleanup_logs(_: Annotated[dict, Depends(require_role([Role.ADMIN]))]):
     with ebt_db() as conn:
         with conn.cursor() as cursor:
-            tables = [
-                "analysis_reason",
-                "file_analysis",
-                "file_event",
-                "process_event",
-                "network_event",
-                "persistence_event",
-                "config_event",
-                "event",
-                "run_index",
-            ]
-
-            cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
-            try:
-                for table in tables:
-                    cursor.execute(f"TRUNCATE TABLE {table}")
-            finally:
-                cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+            # Delete from root tables, schema handles ON DELETE CASCADE for others
+            cursor.execute("DELETE FROM event")
+            cursor.execute("DELETE FROM run_index")
         conn.commit()
     return {"status": "cleaned"}

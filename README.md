@@ -10,7 +10,7 @@ Many malware analysis systems either detonate real malware in cloud environments
 
 EBT safely executes untrusted files inside an isolated, controlled sandbox. Multiple behavioral monitors simultaneously observe the execution, scoping all activity strictly to the execution window. The result is a transparent, rule-based behavioral profile and risk verdict, explicitly built for learning, SOC demonstrations, and ethical simulations.
 
-**Problem it solves:** Provides a rule-based, explainable detection approach that runs entirely offline and locally. This is a different design philosophy from signature-based or ML-based detection, not a benchmarked replacement for either — EBT has not been evaluated against ML models on any labeled dataset.
+**Problem it solves:** Provides a transparent, rule-based detection approach that runs entirely offline and locally for academic and demonstration purposes. It is not designed for production environments and does not utilize machine learning or compete with commercial EDR solutions.
 
 ---
 
@@ -32,7 +32,7 @@ EBT spans a standalone Python agent, a specialized security backend, and a moder
 - **📊 Dynamic Risk Scoring:** Files are given verdicts (`Unlikely`, `Medium Risk`, `High Risk`) driven by cumulative threshold-based metrics.
 - **🛡️ Local Sandboxing:** Files are executed safely utilizing `systemd` transient paths with strict privilege reductions and execution time limits.
 - **💻 Interactive Security Dashboard:** A comprehensive SOC-like web interface offering verdict distribution charts, recent activity timelines, and granular filter tuning.
-- **📥 Comprehensive Reporting:** Export complete behavioral analysis data as structured JSON or CSV-ZIP archives, securely restricted to authorized roles.
+- **📥 Comprehensive Reporting:** Export behavioral analysis data as structured JSON or CSV-ZIP archives.
 
 ---
 
@@ -52,7 +52,12 @@ pip install -r requirements.txt
 # 3. Setup the MySQL Database
 mysql -u root -p < schema.sql
 
-# 4. Install Frontend dependencies
+# 4. Install Backend dependencies
+cd ui/backend
+pip install -r requirements.txt
+cd ../..
+
+# 5. Install Frontend dependencies
 cd ui/frontend
 npm install
 ```

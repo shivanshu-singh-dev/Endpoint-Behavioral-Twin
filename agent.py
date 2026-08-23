@@ -38,8 +38,7 @@ def restore_target_directory(target_dir, snapshot_path):
     snapshot = Path(snapshot_path)
 
     subprocess.run(
-        f"sudo rsync -a --delete --chown=lab:lab {snapshot}/ {target}/",
-        shell=True,
+        ["sudo", "rsync", "-a", "--delete", f"--chown={ATTACK_USER}:{ATTACK_USER}", f"{snapshot}/", f"{target}/"],
         check=True
     )
 
@@ -176,14 +175,24 @@ def process_results(run_id):
 
 
 def main():
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler("agent.log"),
+            logging.StreamHandler()
+        ]
+    )
+
     print("[agent] Waiting for file in Test Folder...")
 
     monitors = []
 
-    try:
-        seen = set()
+    seen = set()
 
-        while True:
+    while True:
+        try:
             files = [
                 f for f in os.listdir(InputFolder)
                 if os.path.isfile(os.path.join(InputFolder, f))
@@ -195,14 +204,20 @@ def main():
 
                 seen.add(f)
                 filepath = os.path.join(InputFolder, f)
+                
+                # Sanity check to prevent path traversal outside InputFolder
+                if not os.path.realpath(filepath).startswith(os.path.realpath(InputFolder)):
+                    print(f"[agent] Warning: file path out of bounds for {f}")
+                    continue
 
                 print(f"[agent] New file detected: {f}")
 
                 run_id = record_start_time(f)
                 snapshot_path = snapshot_target_directory(TargetPath)
-                monitors = start_monitors(run_id)
-
+                monitors = []
+                
                 try:
+                    monitors = start_monitors(run_id)
                     run_in_sandbox(filepath)
                     time.sleep(1)
                     process_results(run_id)
@@ -212,16 +227,15 @@ def main():
                     restore_target_directory(TargetPath, snapshot_path)
 
                 print(f"[agent] Analysis complete for {f}")
-                return
 
             time.sleep(1)
 
-    except Exception as e:
-        print("[agent] Error:", e)
-
-    finally:
-        if monitors:
-            stop_monitors(monitors)
+        except Exception as e:
+            logging.exception("[agent] Error in main loop (will retry in 5s):")
+            if 'monitors' in locals() and monitors:
+                stop_monitors(monitors)
+                monitors = []
+            time.sleep(5)
 
 
 if __name__ == "__main__":

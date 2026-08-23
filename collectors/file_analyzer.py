@@ -14,7 +14,7 @@ def analyze(summary):
     if settings_path.exists():
         try:
             rules.update(json.loads(settings_path.read_text()))
-        except:
+        except Exception:
             pass
 
     # Normalize weights so they always perfectly sum to 100
