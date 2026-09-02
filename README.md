@@ -50,7 +50,7 @@ cd Endpoint-Behavioral-Twin
 pip install -r requirements.txt
 
 # 3. Setup the MySQL Database
-mysql -u root -p < schema.sql
+./scripts/setup_db.sh
 
 # 4. Install Backend dependencies
 cd ui/backend
@@ -68,14 +68,14 @@ npm install
 
 To fully bring the environment online, you will need to start the backend, the frontend, and the local agent process.
 
-**1. Start the Backend API:**
+**1. Start the Backend API (localhost:5000):**
 ```bash
 cd ui/backend
 source .venv/bin/activate # If utilizing a localized venv
 uvicorn app.main:app --host 0.0.0.0 --port 5000
 ```
 
-**2. Start the Frontend UI:**
+**2. Start the Frontend UI (localhost:5173):**
 ```bash
 cd ui/frontend
 npm run dev

@@ -117,8 +117,8 @@ def record_start_time(filename):
     return run_id
 
 
-def run_in_sandbox(filepath):
-    print("[agent] Running file in sandbox")
+def run_in_sandbox(filepath, is_python=True):
+    print(f"[agent] Running file in sandbox (Python={is_python})")
 
     cmd = [
         "sudo", "systemd-run",
@@ -131,9 +131,12 @@ def run_in_sandbox(filepath):
         f"--property=ReadWritePaths={TargetPath}",
         "--property=NoNewPrivileges=yes",
         "--property=RuntimeMaxSec=30s",
-        PYTHON_BIN,
-        filepath
     ]
+    
+    if is_python:
+        cmd.append(PYTHON_BIN)
+        
+    cmd.append(filepath)
 
     try:
         result = subprocess.run(
@@ -207,12 +210,9 @@ def main():
                     print(f"[agent] Warning: file path out of bounds for {f}")
                     continue
 
-                # File extension check
-                if not f.endswith(".py"):
-                    print(f"[agent] Rejecting {f}: only .py files are currently supported")
-                    continue
-
-                print(f"[agent] New file detected: {f}")
+                is_python = f.endswith(".py")
+                
+                print(f"[agent] New file detected: {f} (Python: {is_python})")
 
                 run_id = record_start_time(f)
                 snapshot_path = snapshot_target_directory(TargetPath)
@@ -223,7 +223,7 @@ def main():
                     monitors = start_monitors(run_id)
                     
                     set_run_status(run_id, "EXECUTING")
-                    run_in_sandbox(filepath)
+                    run_in_sandbox(filepath, is_python)
                     time.sleep(1)
                     
                     set_run_status(run_id, "PROCESSING")
