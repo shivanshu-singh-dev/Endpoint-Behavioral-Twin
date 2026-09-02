@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api'
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('ebt_token')
@@ -35,7 +35,7 @@ export const api = {
   exportRun: async (runId, format) => {
     const token = localStorage.getItem('ebt_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
     const response = await fetch(`${API_BASE}/runs/${runId}/export?format=${format}`, { headers });
     if (!response.ok) throw new Error('Export failed');
     const blob = await response.blob();

@@ -13,12 +13,13 @@ from db import db_cursor
 from utils.time_utils import now_ist
 
 InputFolder = os.environ.get("INPUT_FOLDER", "/home/lab/Test Folder")
+TargetPath = Path(os.environ.get("TARGET_PATH", "/home/lab/lab_docs"))
 
 ATTACK_USER = "lab"
-PYTHON_BIN = "/usr/bin/python3"
+BASE_DIR = Path(__file__).resolve().parent
+PYTHON_BIN = sys.executable
 
-ANALYZER = "collectors/file_analyzer.py"
-TargetPath = Path(os.environ.get("TARGET_PATH", "/home/lab/lab_docs"))
+ANALYZER_SCRIPT = str(BASE_DIR / "collectors" / "file_analyzer.py")
 
 
 def snapshot_target_directory(target_dir):
@@ -54,41 +55,30 @@ def start_monitors(run_id):
     env = os.environ.copy()
     env["EBT_RUN_ID"] = str(run_id)
 
-    file_mon = subprocess.Popen(
-        [PYTHON_BIN, "monitors/file_monitor.py"],
-        env=env
-    )
-    monitors.append(file_mon)
+    monitor_scripts = [
+        "monitors/file_monitor.py",
+        "monitors/process_monitor.py",
+        "monitors/network_monitor.py",
+        "monitors/persistence_monitor.py",
+        "monitors/config_monitor.py",
+    ]
 
-    proc_mon = subprocess.Popen(
-        [PYTHON_BIN, "monitors/process_monitor.py"],
-        env=env
-    )
-    monitors.append(proc_mon)
-
-    net_mon = subprocess.Popen(
-        [PYTHON_BIN, "monitors/network_monitor.py"],
-        env=env
-    )
-    monitors.append(net_mon)
-
-    persistence_mon = subprocess.Popen(
-        [PYTHON_BIN, "monitors/persistence_monitor.py"],
-        env=env
-    )
-    monitors.append(persistence_mon)
-
-    config_mon = subprocess.Popen(
-        [PYTHON_BIN, "monitors/config_monitor.py"],
-        env=env
-    )
-    monitors.append(config_mon)
+    for script in monitor_scripts:
+        script_path = str(BASE_DIR / script)
+        monitors.append(subprocess.Popen([PYTHON_BIN, script_path], env=env))
 
     time.sleep(0.5)
 
+    failed = False
     for monitor in monitors:
         if monitor.poll() is not None:
-            print("[agent] Warning: a monitor failed to start")
+            failed = True
+            print("[agent] Critical: A monitor failed to start")
+            break
+
+    if failed:
+        stop_monitors(monitors)
+        raise RuntimeError("Monitor startup failure")
 
     return monitors
 
@@ -101,6 +91,13 @@ def stop_monitors(monitors):
             monitor.wait()
 
 
+def set_run_status(run_id, status):
+    with db_cursor() as (conn, cursor):
+        cursor.execute("UPDATE run_index SET status = %s WHERE run_id = %s", (status, run_id))
+        conn.commit()
+    print(f"[agent] Run {run_id} status -> {status}")
+
+
 def record_start_time(filename):
     start_time = now_ist()
     created_at = start_time
@@ -108,10 +105,10 @@ def record_start_time(filename):
     with db_cursor() as (conn, cursor):
         cursor.execute(
             """
-            INSERT INTO run_index (filename, start_time, created_at)
-            VALUES (%s, %s, %s)
+            INSERT INTO run_index (filename, start_time, created_at, status)
+            VALUES (%s, %s, %s, %s)
             """,
-            (filename, start_time, created_at)
+            (filename, start_time, created_at, "PENDING")
         )
         run_id = cursor.lastrowid
         conn.commit()
@@ -131,7 +128,7 @@ def run_in_sandbox(filepath):
         f"--gid={ATTACK_USER}",
         "--property=ProtectSystem=strict",
         "--property=ProtectHome=read-only",
-        "--property=ReadWritePaths=/home/lab/lab_docs",
+        f"--property=ReadWritePaths={TargetPath}",
         "--property=NoNewPrivileges=yes",
         "--property=RuntimeMaxSec=30s",
         PYTHON_BIN,
@@ -169,7 +166,7 @@ def run_in_sandbox(filepath):
 
 def process_results(run_id):
     subprocess.run(
-        [PYTHON_BIN, ANALYZER, str(run_id)],
+        [PYTHON_BIN, ANALYZER_SCRIPT, str(run_id)],
         check=True
     )
 
@@ -210,6 +207,11 @@ def main():
                     print(f"[agent] Warning: file path out of bounds for {f}")
                     continue
 
+                # File extension check
+                if not f.endswith(".py"):
+                    print(f"[agent] Rejecting {f}: only .py files are currently supported")
+                    continue
+
                 print(f"[agent] New file detected: {f}")
 
                 run_id = record_start_time(f)
@@ -217,10 +219,20 @@ def main():
                 monitors = []
                 
                 try:
+                    set_run_status(run_id, "MONITORING")
                     monitors = start_monitors(run_id)
+                    
+                    set_run_status(run_id, "EXECUTING")
                     run_in_sandbox(filepath)
                     time.sleep(1)
+                    
+                    set_run_status(run_id, "PROCESSING")
                     process_results(run_id)
+                    
+                    set_run_status(run_id, "COMPLETED")
+                except Exception as e:
+                    set_run_status(run_id, "FAILED")
+                    raise e
                 finally:
                     stop_monitors(monitors)
                     monitors = []

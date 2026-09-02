@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS run_index (
     run_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     filename VARCHAR(255) NOT NULL,
     start_time DATETIME NOT NULL,
-    created_at DATETIME NOT NULL
+    created_at DATETIME NOT NULL,
+    status VARCHAR(50) DEFAULT 'PENDING'
 );
 
 CREATE TABLE IF NOT EXISTS event (

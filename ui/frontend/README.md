@@ -7,11 +7,11 @@ npm install
 npm run dev
 ```
 
-By default frontend calls `http://localhost:8000/api`.
+By default frontend calls `http://localhost:5000/api`.
 
 Override API URL:
 ```bash
-VITE_API_BASE=http://localhost:8000/api npm run dev
+VITE_API_BASE=http://localhost:5000/api npm run dev
 ```
 
 ## Implemented views
