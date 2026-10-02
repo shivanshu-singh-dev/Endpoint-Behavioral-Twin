@@ -1,63 +1,176 @@
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  FlaskConical,
+  Sliders,
+  Shield,
+  ShieldAlert,
+  Volume2,
+  VolumeX,
+  Menu,
+  LogOut,
+  Clock,
+  Activity,
+  User,
+  Wrench
+} from 'lucide-react'
+import { soundManager } from '../utils/audio'
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: '📊' },
-  { to: '/runs', label: 'Runs', icon: '🧪' },
-]
-
-export default function Layout({ user, canTuneRules, sidebarCollapsed, onToggleSidebar, onLogout, children }) {
+export default function Layout({
+  user,
+  canTuneRules,
+  sidebarCollapsed,
+  onToggleSidebar,
+  onLogout,
+  children,
+}) {
   const location = useLocation()
+  const [soundOn, setSoundOn] = useState(soundManager.isEnabled())
+  const [time, setTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const toggleSound = () => {
+    const newState = soundManager.toggle()
+    setSoundOn(newState)
+  }
+
+  const navItems = [
+    { to: '/', label: 'SOC Dashboard', icon: LayoutDashboard },
+    { to: '/runs', label: 'Analysis Runs', icon: FlaskConical },
+  ]
+
+  const formattedUtc = time.toISOString().substring(11, 19) + ' UTC'
+  const formattedLocal = time.toLocaleTimeString()
 
   return (
     <div className={`shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className="sidebar">
         <div className="brand-row">
-          <div className="brand-mark">🛡️</div>
+          <div className="brand-mark" title="Endpoint Behavioral Twin">
+            <Shield size={22} />
+          </div>
           {!sidebarCollapsed && (
-            <div>
+            <div className="brand-text">
               <h1>EBT SOC</h1>
-              <p>Endpoint Behavioral Twin</p>
+              <p>ENDPOINT BEHAVIORAL TWIN</p>
             </div>
           )}
         </div>
 
         <nav className="nav-links">
-          {navItems.map((item) => (
-            <Link key={item.to} className={location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to)) ? 'active' : ''} to={item.to}>
-              <span>{item.icon}</span>
-              {!sidebarCollapsed && item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive =
+              location.pathname === item.to ||
+              (item.to !== '/' && location.pathname.startsWith(item.to))
+            return (
+              <Link
+                key={item.to}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                to={item.to}
+                onClick={() => soundManager.playClick()}
+                title={sidebarCollapsed ? item.label : ''}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </Link>
+            )
+          })}
+
           {canTuneRules && (
-            <Link className={location.pathname === '/rules' ? 'active' : ''} to="/rules">
-              <span>⚙️</span>
-              {!sidebarCollapsed && 'Rule Tuning'}
+            <Link
+              className={`nav-item ${location.pathname === '/rules' ? 'active' : ''}`}
+              to="/rules"
+              onClick={() => soundManager.playClick()}
+              title={sidebarCollapsed ? 'Rule Tuning' : ''}
+            >
+              <Sliders size={18} />
+              {!sidebarCollapsed && <span>Rule Tuning</span>}
             </Link>
           )}
-          {user.role === 'admin' && (
-            <Link className={location.pathname === '/admin' ? 'active' : ''} to="/admin">
-              <span>🧰</span>
-              {!sidebarCollapsed && 'Admin'}
+
+          {user?.role === 'admin' && (
+            <Link
+              className={`nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
+              to="/admin"
+              onClick={() => soundManager.playClick()}
+              title={sidebarCollapsed ? 'Admin Center' : ''}
+            >
+              <Wrench size={18} />
+              {!sidebarCollapsed && <span>Admin Center</span>}
             </Link>
           )}
         </nav>
+
+        {!sidebarCollapsed && (
+          <div className="sidebar-footer">
+            <div className="telemetry-status-pill">
+              <span className="pulse-dot" />
+              <span>SOC MONITOR: ACTIVE</span>
+            </div>
+          </div>
+        )}
       </aside>
 
       <section className="content-wrap">
         <header className="topbar">
-          <button className="ghost-btn" onClick={onToggleSidebar}>☰</button>
-          <div className="user-chip">
-            <span className="avatar">{user.username[0]?.toUpperCase() || 'U'}</span>
-            <div>
-              <strong>{user.username}</strong>
-              <small>{user.role}</small>
+          <div className="topbar-left">
+            <button
+              className="ghost-btn"
+              onClick={() => {
+                soundManager.playClick()
+                onToggleSidebar()
+              }}
+              title="Toggle Sidebar"
+            >
+              <Menu size={18} />
+            </button>
+            <div className="soc-clock" title={`Local: ${formattedLocal} | UTC: ${formattedUtc}`}>
+              <Clock size={15} color="#38bdf8" />
+              <span>{formattedUtc}</span>
             </div>
           </div>
-          <button className="primary-btn" onClick={onLogout}>Logout</button>
+
+          <div className="topbar-right">
+            <button
+              className="ghost-btn"
+              onClick={toggleSound}
+              title={soundOn ? 'Sound FX On (Click to Mute)' : 'Sound FX Muted (Click to Enable)'}
+            >
+              {soundOn ? <Volume2 size={16} color="#38bdf8" /> : <VolumeX size={16} />}
+            </button>
+
+            <div className="user-chip">
+              <span className="avatar">
+                {user?.username?.[0]?.toUpperCase() || <User size={14} />}
+              </span>
+              <div>
+                <strong>{user?.username || 'Analyst'}</strong>
+                <small>{user?.role || 'Guest'}</small>
+              </div>
+            </div>
+
+            <button
+              className="ghost-btn"
+              onClick={() => {
+                soundManager.playClick()
+                onLogout()
+              }}
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
         </header>
+
         <main className="main-content">{children}</main>
       </section>
     </div>
   )
 }
-

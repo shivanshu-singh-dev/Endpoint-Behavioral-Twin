@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Layout from './components/Layout'
+import { ToastProvider, useToast } from './components/Toast'
 import { api } from './services/api'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -8,6 +9,8 @@ import RunsPage from './pages/RunsPage'
 import RunDetailPage from './pages/RunDetailPage'
 import RuleSettingsPage from './pages/RuleSettingsPage'
 import AdminPage from './pages/AdminPage'
+import { soundManager } from './utils/audio'
+import { Loader2 } from 'lucide-react'
 
 function Protected({ user, children }) {
   if (!user) return <Navigate to="/login" replace />
@@ -20,14 +23,45 @@ function RunDetailLoader({ user, cache, lineCache, setCache, setLineCache }) {
 
   useEffect(() => {
     if (!runId || cache[runId]) return
-    Promise.all([api.runDetail(runId), api.runTimeline(runId)]).then(([detail, timeline]) => {
-      setCache((prev) => ({ ...prev, [runId]: detail }))
-      setLineCache((prev) => ({ ...prev, [runId]: timeline }))
-    })
+    Promise.all([api.runDetail(runId), api.runTimeline(runId)])
+      .then(([detail, timeline]) => {
+        setCache((prev) => ({ ...prev, [runId]: detail }))
+        setLineCache((prev) => ({ ...prev, [runId]: timeline }))
+      })
+      .catch((err) => {
+        console.error('Failed to load run detail:', err)
+      })
   }, [runId, cache, setCache, setLineCache])
 
-  if (!cache[runId]) return <p>Loading run…</p>
-  return <RunDetailPage user={user} detail={cache[runId]} timeline={lineCache[runId] || []} />
+  if (!cache[runId]) {
+    return (
+      <div
+        className="page fade-in"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          gap: '1rem',
+        }}
+      >
+        <Loader2 size={36} color="#38bdf8" style={{ animation: 'spin 1s linear infinite' }} />
+        <p className="muted" style={{ fontFamily: 'var(--font-mono)' }}>
+          SYNCHRONIZING BEHAVIORAL TWIN #{runId}...
+        </p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
+
+  return (
+    <RunDetailPage
+      user={user}
+      detail={cache[runId]}
+      timeline={lineCache[runId] || []}
+    />
+  )
 }
 
 function AppRoutes({
@@ -50,23 +84,74 @@ function AppRoutes({
   return (
     <Routes>
       <Route path="/" element={<DashboardPage data={dashboard} />} />
-      <Route path="/runs" element={<RunsPage runs={runs} filters={filters} setFilters={setFilters} searchRuns={searchRuns} />} />
-      <Route path="/runs/:id" element={<RunDetailLoader user={user} cache={runDetail} lineCache={timeline} setCache={setRunDetail} setLineCache={setTimeline} />} />
-      <Route path="/rules" element={canTuneRules ? <RuleSettingsPage rules={rules} onSave={saveRules} canEdit={canTuneRules} /> : <Navigate to="/" />} />
-      <Route path="/admin" element={user.role === 'admin' ? <AdminPage currentUser={user} users={users} {...adminActions} /> : <Navigate to="/" />} />
+      <Route
+        path="/runs"
+        element={
+          <RunsPage
+            runs={runs}
+            filters={filters}
+            setFilters={setFilters}
+            searchRuns={searchRuns}
+          />
+        }
+      />
+      <Route
+        path="/runs/:id"
+        element={
+          <RunDetailLoader
+            user={user}
+            cache={runDetail}
+            lineCache={timeline}
+            setCache={setRunDetail}
+            setLineCache={setTimeline}
+          />
+        }
+      />
+      <Route
+        path="/rules"
+        element={
+          canTuneRules ? (
+            <RuleSettingsPage rules={rules} onSave={saveRules} canEdit={canTuneRules} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          user.role === 'admin' ? (
+            <AdminPage currentUser={user} users={users} {...adminActions} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   )
 }
 
-export default function App() {
+function AppContent() {
+  const { addToast } = useToast()
   const [user, setUser] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [error, setError] = useState('')
-  const [dashboard, setDashboard] = useState({ total_runs: 0, avg_risk_score: 0, verdict_distribution: [], recent_runs: [] })
+  const [dashboard, setDashboard] = useState({
+    total_runs: 0,
+    avg_risk_score: 0,
+    verdict_distribution: [],
+    recent_runs: [],
+  })
   const [runs, setRuns] = useState([])
   const [filters, setFilters] = useState({})
-  const [rules, setRules] = useState({ file_weight: 5, process_weight: 7, network_weight: 10, persistence_weight: 12, config_weight: 4 })
+  const [rules, setRules] = useState({
+    file_weight: 5,
+    process_weight: 7,
+    network_weight: 10,
+    persistence_weight: 12,
+    config_weight: 4,
+  })
   const [users, setUsers] = useState([])
   const [runDetail, setRunDetail] = useState({})
   const [timeline, setTimeline] = useState({})
@@ -100,23 +185,43 @@ export default function App() {
       const response = await api.login(payload)
       localStorage.setItem('ebt_token', response.access_token)
       setError('')
+      soundManager.playSuccess()
       await hydrate()
+      addToast({
+        type: 'success',
+        title: 'SOC Access Granted',
+        message: `Welcome back, ${payload.username}`,
+      })
       navigate('/')
     } catch (e) {
       setError(e.message)
+      soundManager.playAlert()
+      addToast({
+        type: 'error',
+        title: 'Authentication Failed',
+        message: e.message || 'Invalid credentials',
+      })
     }
   }
 
   const handleLogout = () => {
     localStorage.removeItem('ebt_token')
     setUser(null)
+    addToast({
+      type: 'info',
+      title: 'Session Terminated',
+      message: 'Logged out of Endpoint Behavioral Twin SOC',
+    })
     navigate('/login')
   }
 
   const searchRuns = async (overrideFilters) => {
     const activeFilters = overrideFilters || filters
-    const sanitized = Object.fromEntries(Object.entries(activeFilters).filter(([, v]) => v !== '' && v !== undefined))
-    setRuns(await api.runs(sanitized))
+    const sanitized = Object.fromEntries(
+      Object.entries(activeFilters).filter(([, v]) => v !== '' && v !== undefined)
+    )
+    const results = await api.runs(sanitized)
+    setRuns(results)
     if (overrideFilters) setFilters(overrideFilters)
   }
 
@@ -172,5 +277,13 @@ export default function App() {
         />
       </Layout>
     </Protected>
+  )
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   )
 }

@@ -1,29 +1,53 @@
-*.pyc
-node_modules/
-
+# Python
 __pycache__/
 *.py[cod]
-node_modules/
-
-.env*
-venv/
+*$py.class
+*.so
+.Python
+env/
 .venv/
-
-ui/frontend/dist/
-*.db
-*.sqlite
-*.sqlite3
-state/
-ui/backend/state/
-
-*.log
-.DS_Store
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-
-# Testing
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 .pytest_cache/
-.coverage
+
+# Node & Frontend
+node_modules/
+ui/frontend/node_modules/
+ui/frontend/dist/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Config
+.env
+.env.local
+.env.*.local
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & Runtime
+*.log

@@ -16,12 +16,12 @@ EBT safely executes untrusted files inside an isolated, controlled sandbox. Mult
 
 ## ⚡ Tech Stack
 
-EBT spans a standalone Python agent, a specialized security backend, and a modern reactive dashboard.
+EBT spans a standalone Python agent, a specialized security backend, and an ultra-modern reactive SOC dashboard.
 
 - **Agent & Monitors:** Python 3, psutil, watchdog
-- **Backend API:** FastAPI, Uvicorn, Python, cryptography
+- **Backend API:** FastAPI, Uvicorn, Python, cryptography, PyMySQL, DBUtils
 - **Database:** MySQL
-- **Frontend Dashboard:** React, Vite, Highcharts (for interactive data visualizations)
+- **Frontend Dashboard:** React 18, Vite, Highcharts 3D, Lucide Icons, Web Audio API synthesis, Canvas Confetti
 
 ---
 
@@ -29,10 +29,15 @@ EBT spans a standalone Python agent, a specialized security backend, and a moder
 
 - **🔍 Behavioral Monitors:** Captures file activity, process spawning, network connections, configuration shifts, and persistence mechanisms.
 - **🧠 Explainable Detection Philosophy:** Utilizes transparent, rule-based heuristics. Each rule contributes a risk score supported by a human-readable reason. (No signatures, no ML).
-- **📊 Dynamic Risk Scoring:** Files are given verdicts (`Unlikely`, `Medium Risk`, `High Risk`) driven by cumulative threshold-based metrics.
+- **📊 Dynamic Risk Scoring & Live DEFCON Posture:** Files receive transparent verdicts (`Unlikely`, `Medium Risk`, `High Risk`) driven by cumulative threshold-based metrics.
 - **🛡️ Local Sandboxing:** Files are executed safely utilizing `systemd` transient paths with strict privilege reductions and execution time limits.
-- **💻 Interactive Security Dashboard:** A comprehensive SOC-like web interface offering verdict distribution charts, recent activity timelines, and granular filter tuning.
-- **📥 Comprehensive Reporting:** Export behavioral analysis data as structured JSON or CSV-ZIP archives.
+- **💻 Ultra-Modern Cyber SOC Dashboard:** 
+  - Dynamic 3D Highcharts visualizations (3D Donut verdict breakdown, 3D risk severity profile, real-time spline area trend).
+  - Multi-tab investigation workbench (process execution hierarchy tree, chronological behavior timeline rails, cyber terminal attack narratives, and raw JSON telemetry inspector).
+  - Multi-dimension behavioral filter engine with instant presets and active tag chips.
+  - Interactive rule tuner with real-time vector weight distribution ratio bars.
+  - Web Audio API synthesized cyber feedback and floating toast alert system.
+- **📥 Comprehensive Reporting:** Export behavioral analysis data as structured JSON or CSV-ZIP archives with one click.
 
 ---
 
