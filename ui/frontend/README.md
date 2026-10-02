@@ -1,6 +1,6 @@
-# 🛡️ EBT SOC Frontend Console (React + Vite)
+# 🛡️ EBT Frontend Console (React + Vite)
 
-A modern, high-tech Security Operations Center (SOC) web interface for the **Endpoint Behavioral Twin** (EBT) platform.
+The web dashboard for the **Endpoint Behavioral Twin** (EBT) platform.
 
 ---
 
@@ -9,8 +9,8 @@ A modern, high-tech Security Operations Center (SOC) web interface for the **End
 - **Routing:** React Router v6
 - **Visual Analytics:** Highcharts, Highcharts 3D, Highcharts-React
 - **Icons:** Lucide React
-- **Audio Synthesis:** Web Audio API (zero external dependencies)
-- **Effects:** Canvas Confetti, CSS Glassmorphism & Keyframe Animations
+- **Audio Feedback:** Web Audio API synthesis
+- **Effects:** Canvas Confetti
 
 ---
 
@@ -36,44 +36,42 @@ VITE_API_BASE=http://localhost:5000/api npm run dev
 
 ---
 
-## ✨ Features & Implemented Views
+## ✨ Views & Features
 
-### 1. 📊 SOC Threat Operations Dashboard
-- **DEFCON Threat Posture Banner:** Dynamic endpoint threat posture assessment (DEFCON 1 Critical, DEFCON 3 Elevated, DEFCON 5 Nominal).
+### 1. 📊 Security Dashboard
+- **Threat Summary Banner:** Real-time summary based on recorded high and medium risk runs.
 - **Interactive 3D Highcharts Analytics:**
-  - 3D Donut Verdict Breakdown with slice explosion and click-to-filter runs.
-  - 3D Risk Severity Column Chart with gradient cylinders.
+  - 3D Donut Verdict Breakdown with click-to-filter navigation.
+  - 3D Risk Severity Column Chart.
   - Real-time Area Spline Activity & Risk Timeline with zoom and point inspection.
-- **Live Recent Triage Table:** Instant search and severity chip filtering.
+- **Recent Runs Table:** Search and filter recent runs by filename or verdict.
 
-### 2. 🧪 Analysis Runs Repository & Multi-Dimension Filter Engine
-- Filter by Run ID, Filename, Event Category, Verdict, Score Range (min/max), Process Name, Remote IP/Port, and Time Window.
-- Fast Preset Badges (*High Severity*, *Medium Risk*, *Last 24 Hours*, *Persistence Threats*).
+### 2. 🧪 Analysis Runs & Filter Panel
+- Filter by Run ID, Filename, Event Category, Verdict, Score Range, Process Name, Remote IP/Port, and Time Range.
+- Quick Presets (*High Risk*, *Medium Risk*, *Last 24 Hours*, *Persistence Events*).
 - Multi-column sorting (Run ID, Filename, Timestamp, Verdict, Risk Score).
-- Animated color-coded risk meter bars and pagination controls.
+- Risk meter progress bars and pagination controls.
 
-### 3. 🔬 Investigation Workbench (Run Details)
-- **Visual Analytics Hub:** Interactive 3D Donut (Event Mix), Velocity Timeline (zoom & scrub), and 3D Behavior Intensity columns.
-- **Explain Verdict & Attack Narrative:** Cyber terminal-styled attack narrative with MITRE ATT&CK style indicators and category risk contribution bars.
-- **Process Execution Hierarchy Tree:** Interactive tree diagram with PID badges, executable icons, and parent-child connector lines.
-- **Sequential Behavior Timeline Rail:** Chronological rail with color-coded nodes for each behavioral vector.
-- **Raw Telemetry Inspector:** Searchable event logs with JSON syntax viewer and one-click copy to clipboard.
-- **One-Click Exporters:** Structured JSON and CSV ZIP archive downloads with confetti celebrations on benign verdicts.
+### 3. 🔬 Run Detail View
+- **Visual Analytics:** Interactive 3D Donut (Event Category Mix), Velocity Timeline (zoom & filter), and 3D Column charts.
+- **Verdict Explanation & Narrative:** Explainable detection reasons, attack sequence narrative, and category risk contribution bars.
+- **Process Hierarchy Tree:** Interactive tree diagram showing parent-child process relationships with PIDs.
+- **Sequential Behavior Timeline:** Chronological event rail with color-coded category markers.
+- **Raw Event Logs:** Searchable event telemetry with formatted JSON viewer and one-click copy.
+- **Exporters:** Structured JSON and CSV ZIP archive downloads.
 
-### 4. ⚙️ Real-time Rule Tuning & Scoring Console
-- Interactive sensitivity sliders with live numerical adjustments.
-- **Relative Weight Distribution Bar:** Dynamic stacked visual bar displaying the percentage contribution of File, Process, Network, Persistence, and Config weights.
-- Pre-configured tuning profiles (*Ideal SOC Balance*, *Ransomware Focus*, *Network Sentinel*, *Threat Hunter*).
+### 4. ⚙️ Rule Tuning Console
+- Sensitivity sliders with live numeric inputs.
+- **Weight Distribution Ratio Bar:** Stacked bar displaying the relative percentage contribution of each behavioral vector.
+- Quick tuning profiles (*Balanced*, *Persistence Focused*, *Network Focused*, *Malware Tuning*).
 
-### 5. 🧰 Security Admin Center & User Access Control
-- Analyst account provisioning with role tiers (*Guest*, *Researcher*, *Administrator*).
-- Password-protected telemetry hygiene purge modal for safe data sanitization.
+### 5. 🧰 Administration Center
+- User account management with role tiers (*Guest*, *Researcher*, *Administrator*).
+- Password-protected log hygiene purge action for database sanitization.
 
-### 6. 🔐 Cyberpunk Operations Portal (Login)
-- Glassmorphic login console with simulated live telemetry status indicators.
-- Quick-fill demo role presets (Admin, Researcher, Analyst) for testing.
+### 6. 🔐 Authentication (Login)
+- Clean login console with role presets (Admin, Researcher, Analyst) for testing.
 
-### 7. 🔊 Synthesized Audio & Toast Alert System
-- Zero-dependency synthesized Web Audio API clicks, blips, alert sirens, and success chimes.
-- Global mute toggle in the top bar with persistent local storage.
-- Floating toast notifications with auto-dismiss progress timers.
+### 7. 🔊 Audio Feedback & Toast Notifications
+- Lightweight synthesized audio for clicks, alerts, and confirmations (with a mute toggle).
+- Floating toast notifications with auto-dismiss timers.

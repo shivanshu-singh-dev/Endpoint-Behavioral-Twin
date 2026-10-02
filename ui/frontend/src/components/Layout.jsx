@@ -5,15 +5,13 @@ import {
   FlaskConical,
   Sliders,
   Shield,
-  ShieldAlert,
   Volume2,
   VolumeX,
   Menu,
   LogOut,
   Clock,
-  Activity,
   User,
-  Wrench
+  Wrench,
 } from 'lucide-react'
 import { soundManager } from '../utils/audio'
 
@@ -40,7 +38,7 @@ export default function Layout({
   }
 
   const navItems = [
-    { to: '/', label: 'SOC Dashboard', icon: LayoutDashboard },
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/runs', label: 'Analysis Runs', icon: FlaskConical },
   ]
 
@@ -56,7 +54,7 @@ export default function Layout({
           </div>
           {!sidebarCollapsed && (
             <div className="brand-text">
-              <h1>EBT SOC</h1>
+              <h1>EBT</h1>
               <p>ENDPOINT BEHAVIORAL TWIN</p>
             </div>
           )}
@@ -99,22 +97,13 @@ export default function Layout({
               className={`nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
               to="/admin"
               onClick={() => soundManager.playClick()}
-              title={sidebarCollapsed ? 'Admin Center' : ''}
+              title={sidebarCollapsed ? 'Admin' : ''}
             >
               <Wrench size={18} />
-              {!sidebarCollapsed && <span>Admin Center</span>}
+              {!sidebarCollapsed && <span>Admin</span>}
             </Link>
           )}
         </nav>
-
-        {!sidebarCollapsed && (
-          <div className="sidebar-footer">
-            <div className="telemetry-status-pill">
-              <span className="pulse-dot" />
-              <span>SOC MONITOR: ACTIVE</span>
-            </div>
-          </div>
-        )}
       </aside>
 
       <section className="content-wrap">
@@ -140,7 +129,7 @@ export default function Layout({
             <button
               className="ghost-btn"
               onClick={toggleSound}
-              title={soundOn ? 'Sound FX On (Click to Mute)' : 'Sound FX Muted (Click to Enable)'}
+              title={soundOn ? 'Sound On (Click to Mute)' : 'Sound Muted (Click to Enable)'}
             >
               {soundOn ? <Volume2 size={16} color="#38bdf8" /> : <VolumeX size={16} />}
             </button>
@@ -150,7 +139,7 @@ export default function Layout({
                 {user?.username?.[0]?.toUpperCase() || <User size={14} />}
               </span>
               <div>
-                <strong>{user?.username || 'Analyst'}</strong>
+                <strong>{user?.username || 'User'}</strong>
                 <small>{user?.role || 'Guest'}</small>
               </div>
             </div>

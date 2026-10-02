@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Shield, Lock, User, Terminal, Sparkles, KeyRound, Radio } from 'lucide-react'
+import { Shield, Lock, User, KeyRound, FileCode, Cpu, Globe, Key, Settings } from 'lucide-react'
 import { soundManager } from '../utils/audio'
 
 export default function LoginPage({ onLogin, error }) {
@@ -35,17 +35,17 @@ export default function LoginPage({ onLogin, error }) {
               <Shield size={26} />
             </div>
             <h2>Endpoint Behavioral Twin</h2>
-            <p>Security Operations Center Access</p>
+            <p>Sign in to your account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="form-grid">
             <label>
-              Analyst Username
+              Username
               <div style={{ position: 'relative' }}>
                 <input
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  placeholder="analyst"
+                  placeholder="Username"
                   style={{ width: '100%', paddingLeft: '2.4rem' }}
                   required
                 />
@@ -97,11 +97,11 @@ export default function LoginPage({ onLogin, error }) {
               disabled={loading}
             >
               <KeyRound size={16} />
-              <span>{loading ? 'Authenticating...' : 'Sign In To SOC'}</span>
+              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
 
-          {/* Quick Fill Credentials for rapid testing */}
+          {/* Quick Fill Credentials for testing */}
           <div className="role-preset-grid">
             <button
               type="button"
@@ -128,12 +128,12 @@ export default function LoginPage({ onLogin, error }) {
         </div>
       </div>
 
-      {/* Right panel: Futuristic Cyber Visuals & Telemetry Monitor */}
+      {/* Right panel: Real project description & behavioral monitors overview */}
       <div className="login-right">
         <div style={{ maxWidth: '420px', width: '100%' }}>
           <div
             style={{
-              padding: '1.75rem',
+              padding: '2rem',
               background: 'rgba(11, 17, 32, 0.75)',
               borderRadius: '16px',
               border: '1px solid var(--border-color)',
@@ -141,47 +141,34 @@ export default function LoginPage({ onLogin, error }) {
               boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-              <Terminal size={18} color="#38bdf8" />
-              <strong style={{ fontSize: '0.95rem', color: '#f8fafc' }}>
-                LIVE TWIN TELEMETRY ENGINE
-              </strong>
-            </div>
+            <h3 style={{ fontSize: '1.1rem', color: '#f8fafc', marginBottom: '0.75rem' }}>
+              Behavior-Based Analysis
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.6', margin: '0 0 1.25rem' }}>
+              Observe and evaluate untrusted program executions locally in an isolated sandbox across 5 distinct behavioral vectors:
+            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.82rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                <span>Kernel Telemetry:</span>
-                <span style={{ color: '#10b981', fontWeight: '600' }}>ONLINE</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.83rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e2e8f0' }}>
+                <FileCode size={15} color="#38bdf8" />
+                <span>File System Modifications</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                <span>Process Tree Engine:</span>
-                <span style={{ color: '#38bdf8', fontWeight: '600' }}>MONITORING</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e2e8f0' }}>
+                <Cpu size={15} color="#a855f7" />
+                <span>Process Hierarchy & Spawns</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                <span>Persistence Analyzer:</span>
-                <span style={{ color: '#38bdf8', fontWeight: '600' }}>ACTIVE</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e2e8f0' }}>
+                <Globe size={15} color="#06b6d4" />
+                <span>Outbound Network Connections</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                <span>Encryption Protocol:</span>
-                <span style={{ color: '#a855f7', fontWeight: '600' }}>TLS 1.3 / ZERO-TRUST</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e2e8f0' }}>
+                <Key size={15} color="#f43f5e" />
+                <span>Persistence Mechanisms</span>
               </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: '1.25rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: '#34d399',
-                fontSize: '0.75rem',
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              <span className="pulse-dot" />
-              <span>SOC SENSORS SYNCHRONIZED</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#e2e8f0' }}>
+                <Settings size={15} color="#f59e0b" />
+                <span>System Configuration Shifts</span>
+              </div>
             </div>
           </div>
         </div>

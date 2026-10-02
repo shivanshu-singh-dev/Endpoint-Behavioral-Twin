@@ -12,7 +12,6 @@ import {
   Search,
   ExternalLink,
   ChevronRight,
-  TrendingUp,
   FileCode,
 } from 'lucide-react'
 import { soundManager } from '../utils/audio'
@@ -66,7 +65,7 @@ function getVerdictBadgeClass(verdict) {
   return 'verdict-badge low'
 }
 
-export default function DashboardPage({ data, onFilterSearch }) {
+export default function DashboardPage({ data }) {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVerdictFilter, setSelectedVerdictFilter] = useState('ALL')
@@ -77,33 +76,35 @@ export default function DashboardPage({ data, onFilterSearch }) {
   const totalRuns = data?.total_runs || 0
   const threatRate = totalRuns > 0 ? Math.round(((highRisk + mediumRisk) / totalRuns) * 100) : 0
 
-  // Determine DEFCON / Threat level posture
-  const threatPosture = useMemo(() => {
+  // Real summary based on actual run data
+  const summaryPosture = useMemo(() => {
     if (highRisk > 0) {
       return {
         level: 'critical',
-        title: 'DEFCON 1 — CRITICAL THREATS DETECTED',
-        desc: `${highRisk} malicious endpoint execution runs requiring immediate SOC containment.`,
+        title: 'High Risk Executions Detected',
+        desc: `${highRisk} run${highRisk === 1 ? '' : 's'} exceeded the high-risk threshold. Review behavioral findings below.`,
         icon: ShieldAlert,
       }
     }
     if (mediumRisk > 0) {
       return {
         level: 'elevated',
-        title: 'DEFCON 3 — ELEVATED SUSPICIOUS BEHAVIOR',
-        desc: `${mediumRisk} behavioral anomalies flagged for triage and indicator analysis.`,
+        title: 'Suspicious Behavior Flagged',
+        desc: `${mediumRisk} run${mediumRisk === 1 ? '' : 's'} flagged with medium-risk behavioral activity.`,
         icon: AlertTriangle,
       }
     }
     return {
       level: 'nominal',
-      title: 'DEFCON 5 — ENDPOINT POSTURE NOMINAL',
-      desc: 'All monitored behavioral runs are verified benign. Real-time telemetry nominal.',
+      title: 'Nominal Execution Baseline',
+      desc: totalRuns > 0
+        ? `All ${totalRuns} recorded runs evaluated as benign / low risk.`
+        : 'No execution runs recorded yet.',
       icon: ShieldCheck,
     }
-  }, [highRisk, mediumRisk])
+  }, [highRisk, mediumRisk, totalRuns])
 
-  const PostureIcon = threatPosture.icon
+  const PostureIcon = summaryPosture.icon
 
   // 1. Verdict 3D Donut Options
   const verdictOptions = {
@@ -154,7 +155,7 @@ export default function DashboardPage({ data, onFilterSearch }) {
       options3d: { enabled: true, alpha: 12, beta: 18, depth: 40, viewDistance: 25 },
     },
     tooltip: {
-      pointFormat: '<b>{point.category}</b>: {point.y} analysis runs',
+      pointFormat: '<b>{point.category}</b>: {point.y} runs',
     },
     plotOptions: {
       column: {
@@ -278,9 +279,9 @@ export default function DashboardPage({ data, onFilterSearch }) {
         <div className="title-group">
           <h2>
             <Activity color="#38bdf8" size={26} />
-            Security Operations Dashboard
+            Security Dashboard
           </h2>
-          <span className="muted">Endpoint Behavioral Twin · Real-time Threat Intelligence</span>
+          <span className="muted">Endpoint Behavioral Twin · Behavioral Analytics Overview</span>
         </div>
         <button
           className="primary-btn"
@@ -289,20 +290,20 @@ export default function DashboardPage({ data, onFilterSearch }) {
             navigate('/runs')
           }}
         >
-          <span>Explore All Runs ({totalRuns})</span>
+          <span>View All Runs ({totalRuns})</span>
           <ChevronRight size={16} />
         </button>
       </div>
 
-      {/* Threat Posture DEFCON Banner */}
-      <section className={`threat-banner ${threatPosture.level} fade-in`}>
+      {/* Real Threat Posture Summary Banner */}
+      <section className={`threat-banner ${summaryPosture.level} fade-in`}>
         <div className="threat-banner-left">
           <div className="threat-icon-badge">
             <PostureIcon size={28} />
           </div>
           <div>
-            <h3 className="threat-headline">{threatPosture.title}</h3>
-            <p className="threat-subtext">{threatPosture.desc}</p>
+            <h3 className="threat-headline">{summaryPosture.title}</h3>
+            <p className="threat-subtext">{summaryPosture.desc}</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -339,7 +340,7 @@ export default function DashboardPage({ data, onFilterSearch }) {
           style={{ cursor: 'pointer' }}
         >
           <div className="metric-card-top">
-            <span className="metric-card-title">High Risk (Malware)</span>
+            <span className="metric-card-title">High Risk</span>
             <div className="metric-icon-wrap">
               <Flame size={18} />
             </div>
@@ -353,7 +354,7 @@ export default function DashboardPage({ data, onFilterSearch }) {
           style={{ cursor: 'pointer' }}
         >
           <div className="metric-card-top">
-            <span className="metric-card-title">Medium (Suspicious)</span>
+            <span className="metric-card-title">Medium Risk</span>
             <div className="metric-icon-wrap">
               <AlertTriangle size={18} />
             </div>
@@ -367,7 +368,7 @@ export default function DashboardPage({ data, onFilterSearch }) {
           style={{ cursor: 'pointer' }}
         >
           <div className="metric-card-top">
-            <span className="metric-card-title">Clean / Benign</span>
+            <span className="metric-card-title">Low Risk / Clean</span>
             <div className="metric-icon-wrap">
               <ShieldCheck size={18} />
             </div>
@@ -389,7 +390,7 @@ export default function DashboardPage({ data, onFilterSearch }) {
         <div className="card hover-lift">
           <h3>Risk Severity Profile</h3>
           <p className="muted" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>
-            Threat breakdown across all execution instances
+            Threat breakdown across execution runs
           </p>
           <HighchartsReact highcharts={Highcharts} options={riskOptions} />
         </div>
@@ -397,16 +398,16 @@ export default function DashboardPage({ data, onFilterSearch }) {
         <div className="card hover-lift">
           <h3>Recent Run Activity & Risk</h3>
           <p className="muted" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>
-            Telemetry timeline with interactive point inspection
+            Timeline with interactive point inspection
           </p>
           <HighchartsReact highcharts={Highcharts} options={activityOptions} />
         </div>
       </section>
 
-      {/* Recent Triage Feed */}
+      {/* Recent Runs Triage Feed */}
       <section className="card hover-lift">
         <div className="title-row" style={{ marginBottom: '1rem' }}>
-          <h3>Recent Behavioral Runs</h3>
+          <h3>Recent Runs</h3>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', width: '200px' }}>
               <input

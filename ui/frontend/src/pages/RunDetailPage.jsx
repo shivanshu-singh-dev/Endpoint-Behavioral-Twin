@@ -512,7 +512,7 @@ export default function RunDetailPage({ user, detail, timeline }) {
               ))}
             </ul>
 
-            <h3 style={{ marginTop: '1.5rem' }}>Attack Narrative (Cyber Terminal)</h3>
+            <h3 style={{ marginTop: '1.5rem' }}>Attack Narrative</h3>
             <div className="terminal-card">
               <div className="terminal-header">
                 <div className="terminal-dots">
@@ -520,7 +520,7 @@ export default function RunDetailPage({ user, detail, timeline }) {
                   <span className="terminal-dot yellow" />
                   <span className="terminal-dot green" />
                 </div>
-                <span>EBT-SOC // TWIN ANALYSIS AGENT</span>
+                <span>Behavioral Sequence</span>
               </div>
               <div className="terminal-body">
                 {detail.attack_narrative || 'No attack sequence recorded.'}

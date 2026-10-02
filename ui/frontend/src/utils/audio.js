@@ -1,4 +1,4 @@
-// Lightweight Web Audio API synthesizer for futuristic cyber SOC audio feedback
+// Web Audio API synthesizer for UI audio feedback
 let audioCtx = null
 
 function getAudioContext() {

@@ -62,7 +62,7 @@ export default function FilterChips({ filters, onChange, onSearch }) {
       <div className="title-row" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <SlidersHorizontal size={18} color="#38bdf8" />
-          <h3 style={{ margin: 0 }}>Behavioral Filter Engine</h3>
+          <h3 style={{ margin: 0 }}>Filters</h3>
         </div>
         <button
           className="ghost-btn"
@@ -74,12 +74,12 @@ export default function FilterChips({ filters, onChange, onSearch }) {
         >
           {showAdvanced ? (
             <>
-              <span>Hide Details</span>
+              <span>Hide Advanced</span>
               <ChevronUp size={14} />
             </>
           ) : (
             <>
-              <span>Expand All Filters ({activeFilters.length} Active)</span>
+              <span>Advanced Filters ({activeFilters.length} Active)</span>
               <ChevronDown size={14} />
             </>
           )}
@@ -91,7 +91,7 @@ export default function FilterChips({ filters, onChange, onSearch }) {
         <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
           <input
             type="text"
-            placeholder="Search by target filename or hash (e.g. malware.exe, trojan)..."
+            placeholder="Search by target filename..."
             value={filters.filename || ''}
             onChange={(e) => update('filename', e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSearch()}
@@ -113,9 +113,9 @@ export default function FilterChips({ filters, onChange, onSearch }) {
           style={{ minWidth: '160px' }}
         >
           <option value="">All Verdicts</option>
-          <option value="High Risk">🚨 High Risk</option>
-          <option value="Medium Risk">⚠️ Medium Risk</option>
-          <option value="Unlikely">🛡️ Unlikely / Clean</option>
+          <option value="High Risk">High Risk</option>
+          <option value="Medium Risk">Medium Risk</option>
+          <option value="Unlikely">Unlikely / Clean</option>
         </select>
 
         <button
@@ -126,7 +126,7 @@ export default function FilterChips({ filters, onChange, onSearch }) {
           }}
         >
           <Search size={16} />
-          <span>Apply Query</span>
+          <span>Apply</span>
         </button>
       </div>
 
@@ -152,8 +152,8 @@ export default function FilterChips({ filters, onChange, onSearch }) {
               <option value="">Any Category</option>
               <option value="file">File System</option>
               <option value="process">Process Execution</option>
-              <option value="network">Network Socket</option>
-              <option value="persistence">Persistence Hook</option>
+              <option value="network">Network</option>
+              <option value="persistence">Persistence</option>
               <option value="config">System Config</option>
             </select>
           </label>
@@ -211,12 +211,12 @@ export default function FilterChips({ filters, onChange, onSearch }) {
           </label>
 
           <label>
-            Time Window
+            Time Range
             <select
               value={filters.time_range || ''}
               onChange={(e) => update('time_range', e.target.value)}
             >
-              <option value="">All Historic Data</option>
+              <option value="">All Time</option>
               <option value="5m">Last 5 Minutes</option>
               <option value="1h">Last 1 Hour</option>
               <option value="6h">Last 6 Hours</option>
@@ -259,14 +259,14 @@ export default function FilterChips({ filters, onChange, onSearch }) {
 
       {/* Fast Preset Action Buttons */}
       <div className="quick-row">
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Quick Presets:</span>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Presets:</span>
         <button
           className="ghost-btn"
           onClick={() => applyPreset({ min_score: '70' })}
           style={{ borderLeft: '3px solid #f43f5e' }}
         >
           <Flame size={14} color="#f43f5e" />
-          <span>High Severity (≥70)</span>
+          <span>High Risk (≥70)</span>
         </button>
         <button
           className="ghost-btn"
@@ -288,14 +288,14 @@ export default function FilterChips({ filters, onChange, onSearch }) {
           onClick={() => applyPreset({ event_type: 'persistence' })}
         >
           <ShieldAlert size={14} color="#a855f7" />
-          <span>Persistence Threats</span>
+          <span>Persistence Events</span>
         </button>
         <button
           className="ghost-btn"
           onClick={clearAll}
         >
           <RotateCcw size={14} />
-          <span>Reset Filters</span>
+          <span>Reset</span>
         </button>
       </div>
     </div>

@@ -124,10 +124,10 @@ export default function AdminPage({
         <div className="title-group">
           <h2>
             <Wrench color="#38bdf8" size={26} />
-            Security Administration Center
+            Administration Center
           </h2>
           <span className="muted">
-            Manage SOC analyst accounts and maintain behavioral telemetry hygiene
+            Manage user accounts and database hygiene
           </span>
         </div>
       </div>
@@ -137,14 +137,14 @@ export default function AdminPage({
         <div className="card hover-lift">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
             <Users size={20} color="#38bdf8" />
-            <h3 style={{ margin: 0 }}>Analyst Access Control</h3>
+            <h3 style={{ margin: 0 }}>User Management</h3>
           </div>
 
           <div className="form-grid">
             <label>
               Username
               <input
-                placeholder="analyst_jane"
+                placeholder="username"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
               />
@@ -161,14 +161,14 @@ export default function AdminPage({
             </label>
 
             <label>
-              System Role & Access Tier
+              Role
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
               >
-                <option value="guest">Guest (Read-only Analysis View)</option>
+                <option value="guest">Guest (Read-only)</option>
                 <option value="researcher">Researcher (Rule Tuning & Investigation)</option>
-                <option value="admin">Administrator (Full Platform Control)</option>
+                <option value="admin">Administrator (Full Control)</option>
               </select>
             </label>
           </div>
@@ -180,7 +180,7 @@ export default function AdminPage({
             style={{ marginTop: '1.25rem', width: '100%' }}
           >
             <UserPlus size={16} />
-            <span>{loading ? 'Creating...' : 'Create Analyst Account'}</span>
+            <span>{loading ? 'Creating...' : 'Create User'}</span>
           </button>
 
           <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Active Accounts ({users.length})</h3>
@@ -255,7 +255,7 @@ export default function AdminPage({
             }}
           >
             <strong style={{ color: '#fda4af', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Lock size={15} /> Protected SOC Action
+              <Lock size={15} /> Protected Action
             </strong>
             <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               Requires administrator password confirmation before data truncation.

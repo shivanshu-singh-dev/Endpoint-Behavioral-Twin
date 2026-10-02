@@ -189,7 +189,7 @@ function AppContent() {
       await hydrate()
       addToast({
         type: 'success',
-        title: 'SOC Access Granted',
+        title: 'Signed In',
         message: `Welcome back, ${payload.username}`,
       })
       navigate('/')
@@ -209,8 +209,8 @@ function AppContent() {
     setUser(null)
     addToast({
       type: 'info',
-      title: 'Session Terminated',
-      message: 'Logged out of Endpoint Behavioral Twin SOC',
+      title: 'Signed Out',
+      message: 'Logged out of Endpoint Behavioral Twin',
     })
     navigate('/login')
   }

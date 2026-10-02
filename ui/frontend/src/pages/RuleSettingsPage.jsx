@@ -26,7 +26,7 @@ const categoryMeta = {
 
 const presets = [
   {
-    name: 'Ideal SOC Balance',
+    name: 'Balanced',
     icon: Shield,
     rules: { file_weight: 4, process_weight: 5, network_weight: 5, persistence_weight: 12, config_weight: 2 },
   },
@@ -36,17 +36,17 @@ const presets = [
     rules: { file_weight: 5, process_weight: 7, network_weight: 10, persistence_weight: 12, config_weight: 4 },
   },
   {
-    name: 'Ransomware / Persistence Focus',
+    name: 'Persistence Focused',
     icon: Lock,
     rules: { file_weight: 5, process_weight: 5, network_weight: 5, persistence_weight: 20, config_weight: 5 },
   },
   {
-    name: 'C2 Network Sentinel',
+    name: 'Network Focused',
     icon: Globe,
     rules: { file_weight: 5, process_weight: 5, network_weight: 20, persistence_weight: 5, config_weight: 5 },
   },
   {
-    name: 'Aggressive Threat Hunter',
+    name: 'Malware Tuning',
     icon: Flame,
     rules: { file_weight: 7, process_weight: 12, network_weight: 15, persistence_weight: 18, config_weight: 8 },
   },
